@@ -44,5 +44,4 @@ runs:
 
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
-        git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
-          | tar --mtime="@${COMMIT_ETSTAMP}" -cf $DIR.tar -
+        git archive --prefix="$(basename "$DIR")/" --format=tar --output="../$(basename "$DIR").tar" "$COMMIT_SHA"
