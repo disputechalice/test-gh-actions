@@ -14,6 +14,7 @@ runs:
   using: "composite"
   steps:
     - name: Ensure target directory does not exist
+      shell: bash 
       run: |
         ! [[ -d "${{ inputs.dir }}" ] || {
           echo "Directory '${{ inputs.dir }}' already exists. Aborting."
