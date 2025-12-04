@@ -10,13 +10,15 @@ inputs:
   dir:
     description: "Directory to emit the repo and archive"
     required: true
+
 runs:
+  using: "composite"
+
   env:
     REPO: ${{ inputs.repo }}
     REF: ${{ inputs.ref }}
     DIR: ${{ inputs.dir }}
 
-  using: "composite"
   steps:
     - name: Ensure target directory does not exist
       shell: bash 
