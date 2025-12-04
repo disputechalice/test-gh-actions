@@ -18,7 +18,7 @@ runs:
     - name: Ensure target directory does not exist
       shell: bash 
       run: |
-          DIR="${{ inputs.dir }}"
+        DIR="${{ inputs.dir }}"
         ! [[ -d "$DIR" ]] || {
           echo "Directory '$DIR' already exists. Aborting."
           exit 1
