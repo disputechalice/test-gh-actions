@@ -1,7 +1,11 @@
 name: Prep source and environment
+
+defaults:
+  run:
+    shell: bash
+
 runs:
   using: composite
-  shell: bash
   steps:
     - name: Download kit archive
       uses: actions/download-artifact@v4
