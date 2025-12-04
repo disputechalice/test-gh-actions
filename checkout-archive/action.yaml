@@ -4,7 +4,7 @@ inputs:
   repo:
     description: "Repository URL"
     required: true
-  sha:
+  ref:
     description: "Commit SHA or branch to checkout"
     required: true
   dir:
@@ -29,10 +29,13 @@ runs:
         git clone --no-checkout --depth 1 "${{ inputs.repo }}" "${{ inputs.dir }}"
         cd "${{ inputs.dir }}"
 
-        git fetch --depth=1 origin "${{ inputs.sha }}"
-        git checkout "${{ inputs.sha }}"
+        git fetch --depth=1 origin "${{ inputs.ref }}"
 
-        COMMIT_ETSTAMP=$(git log -1 --format=%ct "${{ inputs.sha }}")
+        COMMIT_SHA=$(git rev-parse FETCH_HEAD)
 
-        git archive --prefix="${{ inputs.dir }}" --format=tar "${{ inputs.sha }}" \
+        git checkout "$COMMIT_SHA"
+
+        COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
+
+        git archive --prefix="${{ inputs.dir }}" --format=tar "$COMMIT_SHA" \
           | tar --mtime="@${COMMIT_ETSTAMP}" -cf ${{ inputs.dir }}.tar
