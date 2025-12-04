@@ -1,0 +1,17 @@
+name: Prep source and environment
+runs:
+  using: composite
+  steps:
+    - name: Download source archive
+      uses: actions/download-artifact@v4
+      with:
+        name: gitrepo-archive
+        path: .
+    - name: Extract archives
+      run: |
+        tar -xf kit-archive.tar -xf gitrepo-archive.tar
+    - name: Download environment
+      uses: actions/download-artifact@v4
+      with:
+        name: checkout-repo-env
+        path: ./env
