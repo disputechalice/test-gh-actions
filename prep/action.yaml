@@ -16,8 +16,8 @@ runs:
     - name: Extract archives
       shell: bash
       run: |
-        tar -xf kit-archive.tar 
-        tar -xf gitrepo-archive.tar
+        tar -xf kit.tar 
+        tar -xf gitrepo.tar
     - name: Download environment
       uses: actions/download-artifact@v4
       with:
