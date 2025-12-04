@@ -11,25 +11,30 @@ inputs:
     description: "Directory to emit the repo and archive"
     required: true
 runs:
+  env:
+    REPO: ${{ inputs.repo }}
+    REF: ${{ inputs.ref }}
+    DIR: ${{ inputs.dir }}
+
   using: "composite"
   steps:
     - name: Ensure target directory does not exist
       shell: bash 
       run: |
-        ! [[ -d "${{ inputs.dir }}" ]] || {
-          echo "Directory '${{ inputs.dir }}' already exists. Aborting."
+        ! [[ -d "$DIR" ]] || {
+          echo "Directory '$DIR' already exists. Aborting."
           exit 1
         }
 
     - name: Checkout repository and create archive
       shell: bash
       run: |
-        mkdir -p "${{ inputs.dir }}"
+        mkdir -p "$DIR"
 
-        git clone --no-checkout --depth 1 "${{ inputs.repo }}" "${{ inputs.dir }}"
-        cd "${{ inputs.dir }}"
+        git clone --no-checkout --depth 1 "$REPO" "$DIR"
+        cd "$DIR"
 
-        git fetch --depth=1 origin "${{ inputs.ref }}"
+        git fetch --depth=1 origin "$REF"
 
         COMMIT_SHA=$(git rev-parse FETCH_HEAD)
 
@@ -37,6 +42,5 @@ runs:
 
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
-        git archive --prefix="${{ inputs.dir }}" --format=tar "$COMMIT_SHA" \
-          | tar --mtime="@${COMMIT_ETSTAMP}" -cf ${{ inputs.dir }}.tar -
-
+        git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
+          | tar --mtime="@${COMMIT_ETSTAMP}" -cf $DIR.tar -
