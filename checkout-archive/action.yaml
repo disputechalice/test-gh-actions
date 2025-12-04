@@ -10,6 +10,10 @@ inputs:
   dir:
     description: "Directory to emit the repo and archive"
     required: true
+  upload:
+    description: "Upload as artifact"
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -45,3 +49,10 @@ runs:
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
         git archive --prefix="$(basename "$DIR")/" --format=tar --output="../$(basename "$DIR").tar" "$COMMIT_SHA"
+
+    - name: Upload artifact
+      if: ${{ inputs.upload == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.dir }}-archive
+        path: ${{ inputs.dir }}.tar
