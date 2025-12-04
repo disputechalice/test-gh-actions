@@ -1,9 +1,5 @@
 name: Prep source and environment
 
-defaults:
-  run:
-    shell: bash
-
 runs:
   using: composite
   steps:
@@ -18,6 +14,7 @@ runs:
         name: gitrepo-archive
         path: .
     - name: Extract archives
+      shell: bash
       run: |
         tar -xf kit-archive.tar -xf gitrepo-archive.tar
     - name: Download environment
