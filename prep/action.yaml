@@ -1,6 +1,7 @@
 name: Prep source and environment
 runs:
   using: composite
+  shell: bash
   steps:
     - name: Download kit archive
       uses: actions/download-artifact@v4
