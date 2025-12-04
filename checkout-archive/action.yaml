@@ -1,0 +1,37 @@
+name: Checkout & Archive Git repository
+description: Clone at a specific commit and create a tar archive with commit timestamp
+inputs:
+  repo:
+    description: "Repository URL"
+    required: true
+  sha:
+    description: "Commit SHA or branch to checkout"
+    required: true
+  dir:
+    description: "Directory to emit the repo and archive"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Ensure target directory does not exist
+      run: |
+        ! [[ -d "${{ inputs.dir }}" ] || {
+          echo "Directory '${{ inputs.dir }}' already exists. Aborting."
+          exit 1
+        }
+
+    - name: Checkout repository and create archive
+      shell: bash
+      run: |
+        mkdir -p "${{ inputs.dir }}"
+
+        git clone --no-checkout --depth 1 "${{ inputs.repo }}" "${{ inputs.dir }}"
+        cd "${{ inputs.dir }}"
+
+        git fetch --depth=1 origin "${{ inputs.sha }}"
+        git checkout "${{ inputs.sha }}"
+
+        COMMIT_ETSTAMP=$(git log -1 --format=%ct "${{ inputs.sha }}")
+
+        git archive --prefix="${{ inputs.dir }}" --format=tar "${{ inputs.sha }}" \
+          | tar --mtime="@${COMMIT_ETSTAMP}" -cf ${{ inputs.dir }}.tar
