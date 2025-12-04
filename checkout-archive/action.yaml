@@ -14,15 +14,11 @@ inputs:
 runs:
   using: "composite"
 
-  env:
-    REPO: ${{ inputs.repo }}
-    REF: ${{ inputs.ref }}
-    DIR: ${{ inputs.dir }}
-
   steps:
     - name: Ensure target directory does not exist
       shell: bash 
       run: |
+          DIR="${{ inputs.dir }}"
         ! [[ -d "$DIR" ]] || {
           echo "Directory '$DIR' already exists. Aborting."
           exit 1
@@ -31,6 +27,10 @@ runs:
     - name: Checkout repository and create archive
       shell: bash
       run: |
+        REPO="${{ inputs.repo }}"
+        REF="${{ inputs.ref }}"
+        DIR="${{ inputs.dir }}"
+
         mkdir -p "$DIR"
 
         git clone --no-checkout --depth 1 "$REPO" "$DIR"
