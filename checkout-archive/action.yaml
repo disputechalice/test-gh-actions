@@ -56,11 +56,13 @@ runs:
         git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
           | tar -C "$ARCHIVE_DIR" -xf -
 
+        export 
         if [[ $PERMSRC == "true" ]]; then
           (
-            set -e
-            cd "$ARCHIVE_DIR"
-            source .permsrc
+            echo "... entering: $ARCHIVE_DIR"
+            cd "$ARCHIVE_DIR" \
+              && source .permsrc \
+              || exit 1
           )
         fi
 
