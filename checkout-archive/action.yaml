@@ -64,7 +64,7 @@ runs:
           )
         fi
 
-        tar -C "$ARCHIVE_DIR" --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" .
+        tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" "$ARCHIVE_DIR"
 
     - name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
