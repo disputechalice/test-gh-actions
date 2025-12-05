@@ -13,7 +13,7 @@ inputs:
   permsrc:
     description: "Apply .permsrc"
     required: false
-    default: "true"
+    default: "false"
   upload:
     description: "Upload as artifact"
     required: false
