@@ -50,19 +50,19 @@ runs:
         COMMIT_SHA=$(git rev-parse FETCH_HEAD)
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
-        TMP_DIR=$(mktemp -d)
+        ARCHIVE_DIR="$DIR"
         git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
-          | tar -C "$TMP_DIR" -xf -
+          | tar -C "$ARCHIVE_DIR" -xf -
 
         if [[ $PERMSRC == "true" ]]; then
           (
             set -e
-            cd "$TMP_DIR"
+            cd "$ARCHIVE_DIR"
             source .permsrc
           )
         fi
 
-        tar -C "$TMP_DIR" --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" .
+        tar -C "$ARCHIVE_DIR" --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" .
 
     - name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
