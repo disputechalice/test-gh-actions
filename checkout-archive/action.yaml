@@ -58,7 +58,6 @@ runs:
         if [[ $PERMSRC == "true" ]]; then
           (
             cd "$ARCHIVE_DIR" \
-              && ls -la \
               && source .permsrc \
               || exit 1
           )
