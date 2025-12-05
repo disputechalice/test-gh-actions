@@ -18,8 +18,3 @@ runs:
       run: |
         tar -xf kit.tar
         tar -xf gitrepo.tar
-    - name: Download environment
-      uses: actions/download-artifact@v4
-      with:
-        name: prep-env-dir
-        path: ./env
