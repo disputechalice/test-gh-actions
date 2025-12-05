@@ -59,8 +59,8 @@ runs:
         export 
         if [[ $PERMSRC == "true" ]]; then
           (
-            echo "... entering: $ARCHIVE_DIR"
             cd "$ARCHIVE_DIR" \
+              && ls -la \
               && source .permsrc \
               || exit 1
           )
