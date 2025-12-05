@@ -53,10 +53,8 @@ runs:
         ARCHIVE_DIR="$DIR"
         mkdir -p "$ARCHIVE_DIR"
 
-        git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
-          | tar -C "$ARCHIVE_DIR" -xf -
+        git archive --format=tar "$COMMIT_SHA" | tar -C "$ARCHIVE_DIR" -xf -
 
-        export 
         if [[ $PERMSRC == "true" ]]; then
           (
             cd "$ARCHIVE_DIR" \
