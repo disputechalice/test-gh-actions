@@ -10,6 +10,10 @@ inputs:
   dir:
     description: "Directory to emit the repo and archive"
     required: true
+  permsrc:
+    description: "Apply .permsrc"
+    required: false
+    default: "true"
   upload:
     description: "Upload as artifact"
     required: false
@@ -34,6 +38,7 @@ runs:
         REPO="${{ inputs.repo }}"
         REF="${{ inputs.ref }}"
         DIR="${{ inputs.dir }}"
+        PERMSRC="${{ inputs.permsrc }}"
 
         mkdir -p "$DIR".git
 
@@ -48,6 +53,14 @@ runs:
         TMP_DIR=$(mktemp -d)
         git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
           | tar -C "$TMP_DIR" -xf -
+
+        if [[ $PERMSRC == "true" ]]; then
+          (
+            set -e
+            cd "$TMP_DIR"
+            source .permsrc
+          )
+        fi
 
         tar -C "$TMP_DIR" --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" .
 
