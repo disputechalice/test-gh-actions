@@ -35,19 +35,14 @@ runs:
         REF="${{ inputs.ref }}"
         DIR="${{ inputs.dir }}"
 
-        mkdir -p "$DIR"
+        mkdir -p "$DIR".git
 
-        git clone --no-checkout --depth 1 "$REPO" "$DIR"
+        git clone --bare --depth 1 "$REPO" "$DIR".git
 
-        export GIT_WORK_TREE="$DIR"
-        export GIT_DIR="$DIR"/.git
-
+        export GIT_DIR="$DIR".git
         git fetch --depth=1 origin "$REF"
 
         COMMIT_SHA=$(git rev-parse FETCH_HEAD)
-
-        git checkout "$COMMIT_SHA"
-
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
         TMP_DIR=$(mktemp -d)
@@ -55,7 +50,6 @@ runs:
           | tar -C "$TMP_DIR" -xf -
 
         tar -C "$TMP_DIR" --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" .
-
 
     - name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
