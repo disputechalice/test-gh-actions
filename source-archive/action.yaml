@@ -1,4 +1,4 @@
-name: Checkout & Archive Git repository
+name: Source archive
 description: Clone at a specific commit and create a tar archive with commit timestamp
 inputs:
   repo:
