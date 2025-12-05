@@ -51,6 +51,8 @@ runs:
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
         ARCHIVE_DIR="$DIR"
+        mkdir -p "$ARCHIVE_DIR".git
+
         git archive --prefix="$(basename "$DIR")/" --format=tar "$COMMIT_SHA" \
           | tar -C "$ARCHIVE_DIR" -xf -
 
