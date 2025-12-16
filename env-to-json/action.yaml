@@ -1,0 +1,30 @@
+name: Env file to JSON
+description: Source a file and export selected env vnames as JSON
+
+inputs:
+  sfile:
+    required: true
+
+  vnames:
+    required: true
+    description: Space-separated list of env var names to export
+
+outputs:
+  json:
+    value: ${{ steps.collect.outputs.json }}
+
+runs:
+  using: composite
+  steps:
+    - id: collect
+      shell: bash
+      run: |
+        source "${{ inputs.sfile }}"
+
+        declare var json='{}'
+        for var in ${{ inputs.vnames }}; do
+          json=$(jq --arg k "${var,,}" --arg v "${!var}" \
+            '. + {($k): $v}' <<< "$json")
+        done
+
+        echo "json=$json" >> "$GITHUB_OUTPUT"
