@@ -1,0 +1,19 @@
+name: Fetch artifact tar
+
+inputs:
+  name:
+    description: "Artifact name"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Download archive
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: .
+    - name: Extract archives
+      shell: bash
+      run: |
+        tar -xf ${{ inputs.name }}
