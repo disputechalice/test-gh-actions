@@ -6,12 +6,12 @@ runs:
     - name: Download kit archive
       uses: actions/download-artifact@v4
       with:
-        name: kit-archive
+        name: kit.tar
         path: .
     - name: Download source archive
       uses: actions/download-artifact@v4
       with:
-        name: gitrepo-archive
+        name: gitrepo.tar
         path: .
     - name: Extract archives
       shell: bash

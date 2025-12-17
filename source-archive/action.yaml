@@ -3,13 +3,13 @@ description: Fetch commit, set files mtime to commit timestamp and create a tar 
 
 inputs:
   git-url:
-    description: "Repository URL"
+    description: "GIT Repository URL"
     required: true
   git-ref:
-    description: "Commit SHA or branch to checkout"
+    description: "GIT Ref to fetch"
     required: true
   name:
-    description: "Directory to emit the repo and archive"
+    description: "Archive name"
     required: true
   permsrc:
     description: "Apply .permsrc"
@@ -31,37 +31,32 @@ runs:
       name: Fetch repository and create archive
       shell: bash
       run: |
-        REPO="${{ inputs.git-url }}"
+        URL="${{ inputs.git-url }}"
         REF="${{ inputs.git-ref }}"
-        DIR="${{ inputs.name }}"
+        NAME="${{ inputs.name }}"
         PERMSRC="${{ inputs.permsrc }}"
 
-        ! [[ -d "$DIR" ]] && ! [[ -d "$DIR".git ]] || exit 1
+        GIT_DIR="$NAME".git
+        ARCHIVE_DIR="$NAME"
 
-        mkdir -p "$DIR".git
+        ! [[ -d "$GIT_DIR" ]] && ! [[ -d "$ARCHIVE_DIR".git ]] || exit 1
 
-        git clone --bare --depth 1 "$REPO" "$DIR".git
+        mkdir -p "$GIT_DIR"
+        git clone --bare --depth 1 "$URL" "$GIT_DIR"
 
-        export GIT_DIR="$DIR".git
+        export GIT_DIR
         git fetch --depth=1 origin "$REF"
 
         COMMIT_SHA=$(git rev-parse FETCH_HEAD)
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
 
-        ARCHIVE_DIR="$DIR"
         mkdir -p "$ARCHIVE_DIR"
-
         git archive --format=tar "$COMMIT_SHA" | tar -C "$ARCHIVE_DIR" -xf -
 
-        if [[ $PERMSRC == "true" ]]; then
-          (
-            cd "$ARCHIVE_DIR" \
-              && source .permsrc \
-              || exit 1
-          )
-        fi
+        [[ $PERMSRC == "true" ]] \
+          && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
 
-        tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" "$ARCHIVE_DIR"
+        tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$ARCHIVE_DIR").tar" "$ARCHIVE_DIR"
 
         cat >> $GITHUB_OUTPUT <<< "commit_sha=$COMMIT_SHA"
 
@@ -69,5 +64,5 @@ runs:
       if: ${{ inputs.upload == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.name }}-archive
+        name: ${{ inputs.name }}.tar
         path: ${{ inputs.name }}.tar
