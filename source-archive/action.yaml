@@ -37,8 +37,6 @@ runs:
         ARCHIVE_DIR="$NAME"
         ARCHIVE_TAR="$NAME".tar
 
-        touch "$GIT_DIR"
-
         [[ ! -e "$GIT_DIR" ]]
         [[ ! -e "$ARCHIVE_DIR" ]]
         [[ ! -e "ARCHIVE_TAR" ]]
@@ -50,7 +48,7 @@ runs:
         git fetch --depth=1 origin "${{ inputs.git-ref }}"
 
         COMMIT_SHA=$(git rev-parse FETCH_HEAD)
-        COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
+        COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_SHA")
 
         mkdir -p "$ARCHIVE_DIR"
         git archive --format=tar "$COMMIT_SHA" | tar -C "$ARCHIVE_DIR" -xf -
@@ -58,7 +56,7 @@ runs:
         [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
 
-        tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
+        tar --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
 
         cat >> $GITHUB_OUTPUT << EOF
         git-commit-sha=$COMMIT_SHA
