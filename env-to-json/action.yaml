@@ -27,4 +27,4 @@ runs:
             '. + {($k): $v}' <<< "$json")
         done
 
-        echo "json=$(jq -c . <<< "$json")" >> "$GITHUB_OUTPUT"
+        cat >> "$GITHUB_OUTPUT" <<< "json=$(jq -c . <<< "$json")"

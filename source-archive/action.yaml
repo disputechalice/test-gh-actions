@@ -1,13 +1,14 @@
-name: Source archive
-description: Clone at a specific commit and create a tar archive with commit timestamp
+name: Create source archive from GIT repository
+description: Fetch commit, set files mtime to commit timestamp and create a tar archive
+
 inputs:
-  repo:
+  git-url:
     description: "Repository URL"
     required: true
-  ref:
+  git-ref:
     description: "Commit SHA or branch to checkout"
     required: true
-  dir:
+  name:
     description: "Directory to emit the repo and archive"
     required: true
   permsrc:
@@ -19,26 +20,23 @@ inputs:
     required: false
     default: "true"
 
+outputs:
+  commit_sha:
+    value: ${{ steps.archive.outputs.commit_sha }}
+
 runs:
   using: "composite"
-
   steps:
-    - name: Ensure target directory does not exist
-      shell: bash 
-      run: |
-        DIR="${{ inputs.dir }}"
-        ! [[ -d "$DIR" ]] || {
-          echo "Directory '$DIR' already exists. Aborting."
-          exit 1
-        }
-
-    - name: Checkout repository and create archive
+    - id: archive
+      name: Fetch repository and create archive
       shell: bash
       run: |
-        REPO="${{ inputs.repo }}"
-        REF="${{ inputs.ref }}"
-        DIR="${{ inputs.dir }}"
+        REPO="${{ inputs.git-url }}"
+        REF="${{ inputs.git-ref }}"
+        DIR="${{ inputs.name }}"
         PERMSRC="${{ inputs.permsrc }}"
+
+        ! [[ -d "$DIR" ]] && ! [[ -d "$DIR".git ]] || exit 1
 
         mkdir -p "$DIR".git
 
@@ -64,6 +62,8 @@ runs:
         fi
 
         tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$DIR").tar" "$ARCHIVE_DIR"
+
+        cat >> $GITHUB_OUTPUT <<< "commit_sha=$COMMIT_SHA"
 
     - name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
