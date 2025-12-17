@@ -37,7 +37,7 @@ runs:
         ARCHIVE_DIR="$NAME"
         ARCHIVE_TAR="$NAME".tar
 
-        ! [[ -d "$GIT_DIR" ]] && ! [[ -d "$ARCHIVE_DIR".git ]] || exit 1
+        ! [[ -d "$GIT_DIR" ]] && ! [[ -d "$ARCHIVE_DIR" ]] || exit 1
 
         mkdir -p "$GIT_DIR"
         git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
@@ -56,7 +56,14 @@ runs:
 
         tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
 
-        cat >> $GITHUB_OUTPUT <<< "git-commit-sha=$COMMIT_SHA"
+        cat >> $GITHUB_OUTPUT << EOF
+        git-commit-sha=$COMMIT_SHA
+        archive-tar=$ARCHIVE_TAR
+        EOF
 
-        [[ "${{ inputs.upload }}" == "true" ]] \
-          && gh run upload-artifact --name "$ARCHIVE_TAR" "$ARCHIVE_TAR"
+    - name: Upload artifact
+      if: ${{ inputs.upload == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.archive.outputs.archive-tar }}
+        path: ${{ steps.archive.outputs.archive-tar }}
