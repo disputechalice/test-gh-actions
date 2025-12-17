@@ -31,21 +31,19 @@ runs:
       name: Fetch repository and create archive
       shell: bash
       run: |
-        URL="${{ inputs.git-url }}"
-        REF="${{ inputs.git-ref }}"
         NAME="${{ inputs.name }}"
-        PERMSRC="${{ inputs.permsrc }}"
 
         GIT_DIR="$NAME".git
         ARCHIVE_DIR="$NAME"
+        ARCHIVE_TAR="$NAME".tar
 
         ! [[ -d "$GIT_DIR" ]] && ! [[ -d "$ARCHIVE_DIR".git ]] || exit 1
 
         mkdir -p "$GIT_DIR"
-        git clone --bare --depth 1 "$URL" "$GIT_DIR"
+        git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
 
         export GIT_DIR
-        git fetch --depth=1 origin "$REF"
+        git fetch --depth=1 origin "${{ inputs.git-ref }}"
 
         COMMIT_SHA=$(git rev-parse FETCH_HEAD)
         COMMIT_ETSTAMP=$(git log -1 --format=%ct "$COMMIT_SHA")
@@ -53,16 +51,12 @@ runs:
         mkdir -p "$ARCHIVE_DIR"
         git archive --format=tar "$COMMIT_SHA" | tar -C "$ARCHIVE_DIR" -xf -
 
-        [[ $PERMSRC == "true" ]] \
+        [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
 
-        tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$ARCHIVE_DIR").tar" "$ARCHIVE_DIR"
+        tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
 
         cat >> $GITHUB_OUTPUT <<< "git-commit-sha=$COMMIT_SHA"
 
-    - name: Upload artifact
-      if: ${{ inputs.upload == 'true' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ inputs.name }}.tar
-        path: ${{ inputs.name }}.tar
+        [[ "${{ inputs.upload }}" == "true" ]] \
+          && gh run upload-artifact --name "$ARCHIVE_TAR" "$ARCHIVE_TAR"
