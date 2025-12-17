@@ -37,6 +37,8 @@ runs:
         ARCHIVE_DIR="$NAME"
         ARCHIVE_TAR="$NAME".tar
 
+        touch "$GIT_DIR"
+
         [[ ! -e "$GIT_DIR" ]]
         [[ ! -e "$ARCHIVE_DIR" ]]
         [[ ! -e "ARCHIVE_TAR" ]]
