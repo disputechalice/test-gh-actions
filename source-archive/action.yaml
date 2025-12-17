@@ -37,7 +37,9 @@ runs:
         ARCHIVE_DIR="$NAME"
         ARCHIVE_TAR="$NAME".tar
 
-        ! [[ -d "$GIT_DIR" ]] && ! [[ -d "$ARCHIVE_DIR" ]] || exit 1
+        [[ ! -e "$GIT_DIR" ]]
+        [[ ! -e "$ARCHIVE_DIR" ]]
+        [[ ! -e "ARCHIVE_TAR" ]]
 
         mkdir -p "$GIT_DIR"
         git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
