@@ -21,8 +21,8 @@ inputs:
     default: "true"
 
 outputs:
-  commit_sha:
-    value: ${{ steps.archive.outputs.commit_sha }}
+  git-commit-sha:
+    value: ${{ steps.archive.outputs.git-commit-sha }}
 
 runs:
   using: "composite"
@@ -58,7 +58,7 @@ runs:
 
         tar --mtime="@${COMMIT_ETSTAMP}" --clamp-mtime -cf "$(basename "$ARCHIVE_DIR").tar" "$ARCHIVE_DIR"
 
-        cat >> $GITHUB_OUTPUT <<< "commit_sha=$COMMIT_SHA"
+        cat >> $GITHUB_OUTPUT <<< "git-commit-sha=$COMMIT_SHA"
 
     - name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
