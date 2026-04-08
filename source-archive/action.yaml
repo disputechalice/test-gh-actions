@@ -52,8 +52,7 @@ runs:
 
         mkdir -p "$ARCHIVE_DIR"
         git archive --format=tar "$COMMIT_OID" | tar -C "$ARCHIVE_DIR" -xf -
-        
-        ((PIPESTATUS[0] | PIPESTATUS[1]))
+        ! ((PIPESTATUS[0] | PIPESTATUS[1])) || exit 1
 
         [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
