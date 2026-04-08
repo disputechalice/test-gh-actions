@@ -35,24 +35,25 @@ runs:
       run: |
         NAME="${{ inputs.name }}"
 
-        GIT_DIR=$(mktemp -d /tmp/"$NAME".XXXXXX.git)
         ARCHIVE_DIR="$NAME"
+        test ! -e "$ARCHIVE_DIR"
+
         ARCHIVE_TAR="$NAME".tar
+        test ! -e "$ARCHIVE_TAR"
 
-        [[ ! -e "$ARCHIVE_DIR" ]]
-        [[ ! -e "$ARCHIVE_TAR" ]]
-
+        GIT_DIR=$(mktemp -d /tmp/"$NAME".XXXXXX.git)
         git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
-
         export GIT_DIR
-        git fetch --depth=1 origin "${{ inputs.git-ref }}"
 
+        git fetch --depth=1 origin "${{ inputs.git-ref }}"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
+
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
+        plain_tar=$(mktemp /tmp/"$NAME".git-archive.XXXXXX.tar)
+        git archive --format=tar "$COMMIT_OID" > "$plain_tar"
 
         mkdir -p "$ARCHIVE_DIR"
-        git archive --format=tar "$COMMIT_OID" | tar -C "$ARCHIVE_DIR" -xf -
-        ! ((PIPESTATUS[0] | PIPESTATUS[1])) || exit 1
+        tar -C "$ARCHIVE_DIR" -xf "$plain_tar"
 
         [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
@@ -62,7 +63,7 @@ runs:
         cat >> $GITHUB_OUTPUT << EOF
         git-version=$(git --version)
         git-commit=$COMMIT_OID
-        archive-tar=$ARCHIVE_TAR
+        archive-tar=$(realpath "$ARCHIVE_TAR")
         EOF
 
     - name: Upload artifact
