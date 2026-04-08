@@ -16,4 +16,4 @@ runs:
     - name: Extract archives
       shell: bash
       run: |
-        tar -xf ${{ inputs.name }}
+        tar -xf "${{ inputs.name }}.tar"
