@@ -9,7 +9,7 @@ inputs:
     description: "GIT Ref to fetch"
     required: true
   name:
-    description: "Archive name"
+    description: "Directory / archive name"
     required: true
   permsrc:
     description: "Apply .permsrc"
@@ -35,15 +35,13 @@ runs:
       run: |
         NAME="${{ inputs.name }}"
 
-        GIT_DIR="$NAME".git
+        GIT_DIR=$(mktemp -d /tmp/"$NAME".XXXXXX.git)
         ARCHIVE_DIR="$NAME"
         ARCHIVE_TAR="$NAME".tar
 
-        [[ ! -e "$GIT_DIR" ]]
         [[ ! -e "$ARCHIVE_DIR" ]]
         [[ ! -e "$ARCHIVE_TAR" ]]
 
-        mkdir -p "$GIT_DIR"
         git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
 
         export GIT_DIR
@@ -54,6 +52,7 @@ runs:
 
         mkdir -p "$ARCHIVE_DIR"
         git archive --format=tar "$COMMIT_OID" | tar -C "$ARCHIVE_DIR" -xf -
+        (( PIPESTATUS[0] || PIPESTATUS[1] ))
 
         [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
@@ -61,6 +60,7 @@ runs:
         tar --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
 
         cat >> $GITHUB_OUTPUT << EOF
+        git-version=$(git --version)
         git-commit=$COMMIT_OID
         archive-tar=$ARCHIVE_TAR
         EOF
