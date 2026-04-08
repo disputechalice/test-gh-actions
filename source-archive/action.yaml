@@ -67,7 +67,8 @@ runs:
 
     - name: Upload artifact
       if: ${{ inputs.artifact == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
-        name: ${{ steps.archive.outputs.archive-tar }}
+        name: ${{ inputs.name }}
         path: ${{ steps.archive.outputs.archive-tar }}
+        include-hidden-files: true
