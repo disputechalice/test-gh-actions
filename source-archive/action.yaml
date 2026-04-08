@@ -15,14 +15,16 @@ inputs:
     description: "Apply .permsrc"
     required: false
     default: "false"
-  upload:
+  artifact:
     description: "Upload as artifact"
     required: false
-    default: "true"
+    default: "false"
 
 outputs:
-  git-commit-sha:
-    value: ${{ steps.archive.outputs.git-commit-sha }}
+  git-commit:
+    value: ${{ steps.archive.outputs.git-commit }}
+  archive-tar:
+    value: ${{ steps.archive.outputs.archive-tar }}
 
 runs:
   using: "composite"
@@ -39,7 +41,7 @@ runs:
 
         [[ ! -e "$GIT_DIR" ]]
         [[ ! -e "$ARCHIVE_DIR" ]]
-        [[ ! -e "ARCHIVE_TAR" ]]
+        [[ ! -e "$ARCHIVE_TAR" ]]
 
         mkdir -p "$GIT_DIR"
         git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
@@ -47,11 +49,11 @@ runs:
         export GIT_DIR
         git fetch --depth=1 origin "${{ inputs.git-ref }}"
 
-        COMMIT_SHA=$(git rev-parse FETCH_HEAD)
-        COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_SHA")
+        COMMIT_OID=$(git rev-parse FETCH_HEAD)
+        COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
 
         mkdir -p "$ARCHIVE_DIR"
-        git archive --format=tar "$COMMIT_SHA" | tar -C "$ARCHIVE_DIR" -xf -
+        git archive --format=tar "$COMMIT_OID" | tar -C "$ARCHIVE_DIR" -xf -
 
         [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
@@ -59,12 +61,12 @@ runs:
         tar --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
 
         cat >> $GITHUB_OUTPUT << EOF
-        git-commit-sha=$COMMIT_SHA
+        git-commit=$COMMIT_OID
         archive-tar=$ARCHIVE_TAR
         EOF
 
     - name: Upload artifact
-      if: ${{ inputs.upload == 'true' }}
+      if: ${{ inputs.artifact == 'true' }}
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.archive.outputs.archive-tar }}
