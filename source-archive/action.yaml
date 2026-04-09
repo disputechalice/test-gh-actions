@@ -47,8 +47,8 @@ runs:
 
         git fetch --depth=1 origin "${{ inputs.git-ref }}"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
-
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
+
         plain_tar=$(mktemp /tmp/"$NAME".git-archive.XXXXXX.tar)
         git archive --format=tar "$COMMIT_OID" > "$plain_tar"
 
@@ -58,7 +58,9 @@ runs:
         [[ "${{ inputs.permsrc }}" == "true" ]] \
           && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
 
-        tar --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" "$ARCHIVE_DIR"
+        tar -C "$ARCHIVE_DIR" \
+            --format=gnu --sort=name --owner=0 --group=0 --numeric-owner \
+            --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" .
 
         cat >> $GITHUB_OUTPUT << EOF
         git-version=$(git --version)

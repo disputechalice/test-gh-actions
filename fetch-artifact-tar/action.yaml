@@ -4,7 +4,10 @@ inputs:
   name:
     description: "Artifact name"
     required: true
-
+  prefix:
+    description: "Prefix inside archive"
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
@@ -14,6 +17,11 @@ runs:
         name: ${{ inputs.name }}
         path: .
     - name: Extract archives
+      env:
+        NAME: ${{ inputs.name }}
+        PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
-        tar -xf "${{ inputs.name }}.tar"
+        test ! -e  "$NAME"
+        mkdir -p "$NAME"
+        tar -C "$NAME" -xf "$NAME.tar" "${PREFIX:-.}"
