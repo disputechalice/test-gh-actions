@@ -36,6 +36,10 @@ runs:
         ARCHIVE_DIR: ${{ inputs.target }}
         ARTIFACT_NAME: ${{ inputs.artifact }}
       run: |
+        exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
+        trap 'echo >&2 E$? L$LINENO' ERR
+        : "${ARCHIVE_DIR:?}"
+        
         test ! -e "$ARCHIVE_DIR"
         ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
 
@@ -64,7 +68,7 @@ runs:
             --format=gnu --sort=name --owner=0 --group=0 --numeric-owner \
             --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" .
 
-        cat >> $GITHUB_OUTPUT << EOF
+        cat >&3 << EOF
         git-version=$(git --version)
         git-commit=$COMMIT_OID
         archive-tar=$(realpath "$ARCHIVE_TAR")

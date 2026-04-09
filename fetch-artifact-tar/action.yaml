@@ -26,6 +26,9 @@ runs:
         PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
+        trap 'echo >&2 E$? L$LINENO' ERR      
+        : "${ARTIFACT:?}" "${TARGET:?}"
+
         tars=( "$ARTIFACT".*.tar )
         (( ${#tars[@]} == 1 ))
         archive_tar="${tars[0]}"
