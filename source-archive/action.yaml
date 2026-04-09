@@ -28,13 +28,13 @@ outputs:
 
 runs:
   using: "composite"
-  env:
-    ARCHIVE_DIR: ${{ inputs.target }}
-    ARTIFACT_NAME: ${{ inputs.artifact }}
   steps:
     - id: archive
       name: Fetch repository and create archive
       shell: bash
+      env:
+        ARCHIVE_DIR: ${{ inputs.target }}
+        ARTIFACT_NAME: ${{ inputs.artifact }}
       run: |
         test ! -e "$ARCHIVE_DIR"
         ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
