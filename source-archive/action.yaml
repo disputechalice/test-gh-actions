@@ -41,8 +41,10 @@ runs:
         # Clone bare repo, fetch ref, populate tree into path, apply permsrc, prep canonical tarball
         exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
-        : "$GIT_URL" "$GIT_REF" "${ARCHIVE_DIR:?}"
-        
+        : "${GIT_URL:?}" "${GIT_REF:?}" "${ARCHIVE_DIR:?}"
+
+        WORK_DIR=$(pwd)
+
         test ! -e "$ARCHIVE_DIR"
         mkdir -p "$ARCHIVE_DIR"        
         ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
@@ -57,11 +59,11 @@ runs:
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
         git --work-tree="$ARCHIVE_DIR" checkout -f "$COMMIT_OID"
 
-        if [[ "${{ inputs.permsrc }}" == "true" ]]; then
+        if [[ "${{ inputs.permsrc }}" == "true" ]]; then          
           cd "$ARCHIVE_DIR"
           test -f .permsrc
           source .permsrc
-          cd -
+          cd "$WORK_DIR"
         fi
 
         tar -C "$ARCHIVE_DIR" \
