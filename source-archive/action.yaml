@@ -47,11 +47,11 @@ runs:
         mkdir -p "$ARCHIVE_DIR"        
         ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
 
-        GIT_ADVICE=0
+        export GIT_ADVICE=0
         GIT_DIR=$(mktemp -d /tmp/repo.XXXXXX.git)
         git init --bare "$GIT_DIR"
-
         export GIT_DIR
+
         git fetch --depth=1 "$GIT_URL" "$GIT_REF"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
