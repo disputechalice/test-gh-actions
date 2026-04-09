@@ -1,5 +1,5 @@
-name: Create source archive from GIT repository
-description: Fetch commit, set files mtime to commit timestamp and create a tar archive
+name: Git repo tree
+description: Populate tree from git ref, (optional) normalized tar artifact
 
 inputs:
   git-url:
@@ -8,17 +8,17 @@ inputs:
   git-ref:
     description: "GIT Ref to fetch"
     required: true
-  name:
-    description: "Directory / archive name"
+  target:
+    description: "Directory path to populate"
     required: true
   permsrc:
     description: "Apply .permsrc"
     required: false
     default: "false"
   artifact:
-    description: "Upload as artifact"
+    description: "Artifact name (if to be uploaded)"
     required: false
-    default: "false"
+    default: ''
 
 outputs:
   git-commit:
@@ -28,20 +28,18 @@ outputs:
 
 runs:
   using: "composite"
+  env:
+    ARCHIVE_DIR: ${{ inputs.target }}
+    ARTIFACT_NAME: ${{ inputs.artifact }}
   steps:
     - id: archive
       name: Fetch repository and create archive
       shell: bash
       run: |
-        NAME="${{ inputs.name }}"
-
-        ARCHIVE_DIR="$NAME"
         test ! -e "$ARCHIVE_DIR"
+        ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
 
-        ARCHIVE_TAR="$NAME".tar
-        test ! -e "$ARCHIVE_TAR"
-
-        GIT_DIR=$(mktemp -d /tmp/"$NAME".XXXXXX.git)
+        GIT_DIR=$(mktemp -d /tmp/repo.XXXXXX.git)
         git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
         export GIT_DIR
 
@@ -49,14 +47,18 @@ runs:
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
 
-        plain_tar=$(mktemp /tmp/"$NAME".git-archive.XXXXXX.tar)
-        git archive --format=tar "$COMMIT_OID" > "$plain_tar"
+        git_tar=$(mktemp /tmp/git-archive.XXXXXX.tar)
+        git archive --format=tar "$COMMIT_OID" > "$git_tar"
 
         mkdir -p "$ARCHIVE_DIR"
-        tar -C "$ARCHIVE_DIR" -xf "$plain_tar"
+        tar -C "$ARCHIVE_DIR" -xf "$git_tar"
 
-        [[ "${{ inputs.permsrc }}" == "true" ]] \
-          && (cd "$ARCHIVE_DIR" && source .permsrc || exit 1)
+        if [[ "${{ inputs.permsrc }}" == "true" ]]; then
+          pushd "$ARCHIVE_DIR"
+          test -f .permsrc
+          source .permsrc
+          popd
+        fi
 
         tar -C "$ARCHIVE_DIR" \
             --format=gnu --sort=name --owner=0 --group=0 --numeric-owner \
@@ -69,9 +71,9 @@ runs:
         EOF
 
     - name: Upload artifact
-      if: ${{ inputs.artifact == 'true' }}
+      if: ${{ inputs.artifact != '' }}
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ inputs.name }}
+        name: ${{ inputs.artifact }}
         path: ${{ steps.archive.outputs.archive-tar }}
         include-hidden-files: true

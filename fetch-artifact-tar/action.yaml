@@ -1,7 +1,7 @@
 name: Fetch artifact tar
 
 inputs:
-  name:
+  artifact:
     description: "Artifact name"
     required: true
   target:
@@ -10,22 +10,26 @@ inputs:
   prefix:
     description: "Prefix path inside archive to strip out"
     required: false
-    default: ""
+    default: ''
 runs:
   using: composite
   steps:
     - name: Download archive
       uses: actions/download-artifact@v8
       with:
-        name: ${{ inputs.name }}
+        name: ${{ inputs.artifact }}
         path: .
     - name: Extract (prefixed) payload
       env:
-        NAME: ${{ inputs.name }}
+        ARTIFACT: ${{ inputs.artifact }}
         TARGET: ${{ inputs.target }}
         PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
+        tars=( "$ARTIFACT".*.tar )
+        (( ${#tars[@]} == 1 ))
+        archive_tar="${tars[0]}"
+      
         declare -a tar_args=()
 
         if [[ -n "$PREFIX" ]]; then
@@ -36,4 +40,4 @@ runs:
         test ! -e  "$TARGET"
         mkdir -p "$TARGET"
 
-        tar -x -C "$TARGET" -f "$NAME.tar" "${tar_args[@]}"
+        tar -x -C "$TARGET" -f "$archive_tar" "${tar_args[@]}"
