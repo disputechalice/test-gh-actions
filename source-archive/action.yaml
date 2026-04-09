@@ -58,10 +58,10 @@ runs:
         git --work-tree="$ARCHIVE_DIR" checkout -f "$COMMIT_OID"
 
         if [[ "${{ inputs.permsrc }}" == "true" ]]; then
-          pushd "$ARCHIVE_DIR"
+          cd "$ARCHIVE_DIR"
           test -f .permsrc
           source .permsrc
-          popd
+          cd -
         fi
 
         tar -C "$ARCHIVE_DIR" \
