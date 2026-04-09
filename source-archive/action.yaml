@@ -47,6 +47,7 @@ runs:
         mkdir -p "$ARCHIVE_DIR"        
         ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
 
+        GIT_ADVICE=0
         GIT_DIR=$(mktemp -d /tmp/repo.XXXXXX.git)
         git init --bare "$GIT_DIR"
 
