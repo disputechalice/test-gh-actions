@@ -5,10 +5,10 @@ inputs:
     description: "Artifact name"
     required: true
   target:
-    description: "Path to extract to"
+    description: "Target path to extract to"
     required: true
   prefix:
-    description: "Prefix inside archive"
+    description: "Prefix path inside archive to strip out"
     required: false
     default: ""
 runs:
