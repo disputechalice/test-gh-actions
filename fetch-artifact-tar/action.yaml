@@ -4,6 +4,9 @@ inputs:
   name:
     description: "Artifact name"
     required: true
+  target:
+    description: "Path to extract to"
+    required: true
   prefix:
     description: "Prefix inside archive"
     required: false
@@ -19,6 +22,7 @@ runs:
     - name: Extract (prefixed) payload
       env:
         NAME: ${{ inputs.name }}
+        TARGET: ${{ inputs.target }}
         PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
@@ -29,7 +33,7 @@ runs:
           tar_args+=(--strip-components=${#parts[@]} "$PREFIX")
         fi
 
-        test ! -e  "$NAME"
-        mkdir -p "$NAME"
+        test ! -e  "$TARGET"
+        mkdir -p "$TARGET"
 
-        tar -x -C "$NAME" -f "$NAME.tar" "${tar_args[@]}"
+        tar -x -C "$TARGET" -f "$NAME.tar" "${tar_args[@]}"
