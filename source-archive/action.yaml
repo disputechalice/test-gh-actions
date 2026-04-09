@@ -30,12 +30,13 @@ runs:
   using: "composite"
   steps:
     - id: archive
-      name: Fetch repository and create archive
+      name: Fetch commit tree for given ref
       shell: bash
       env:
         ARCHIVE_DIR: ${{ inputs.target }}
         ARTIFACT_NAME: ${{ inputs.artifact }}
       run: |
+        # Clone bare repo, fetch ref, populate tree into path, apply permsrc, prep canonical tarball
         exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
         : "${ARCHIVE_DIR:?}"

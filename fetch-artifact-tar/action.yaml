@@ -14,24 +14,26 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Download archive
+    - name: Download artifact
       uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.artifact }}
         path: .
-    - name: Extract (prefixed) payload
+    - name: Extract payload or its part
       env:
         ARTIFACT: ${{ inputs.artifact }}
         TARGET: ${{ inputs.target }}
         PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
+        # Extract tree from artifact into path, optionally strip out subtree only
+        # Ensure single tarball named <artifact>.*.tar only
         trap 'echo >&2 E$? L$LINENO' ERR      
         : "${ARTIFACT:?}" "${TARGET:?}"
 
-        tars=( "$ARTIFACT".*.tar )
-        (( ${#tars[@]} == 1 ))
-        archive_tar="${tars[0]}"
+        found=( "$ARTIFACT".*.tar )
+        (( ${#found[@]} == 1 ))
+        archive_tar="${found[0]}"
       
         declare -a tar_args=()
 
@@ -40,7 +42,7 @@ runs:
           tar_args+=(--strip-components=${#parts[@]} "$PREFIX")
         fi
 
-        test ! -e  "$TARGET"
+        test ! -e "$TARGET"
         mkdir -p "$TARGET"
 
         tar -x -C "$TARGET" -f "$archive_tar" "${tar_args[@]}"
