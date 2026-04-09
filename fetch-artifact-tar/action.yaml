@@ -16,12 +16,22 @@ runs:
       with:
         name: ${{ inputs.name }}
         path: .
-    - name: Extract archives
+    - name: Extract (prefixed) payload
       env:
         NAME: ${{ inputs.name }}
         PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
+        declare -a tar_args=()
+
+        if [[ -n "$PREFIX" ]]; then
+          PREFIX=${PREFIX#/}
+          PREFIX=${PREFIX%/}
+          IFS='/' read -r -a parts <<< "$PREFIX"
+          tar_args+=(--strip-components=${#parts[@]} "$PREFIX")
+        fi
+
         test ! -e  "$NAME"
         mkdir -p "$NAME"
-        tar -C "$NAME" -xf "$NAME.tar" "${PREFIX:-.}"
+
+        tar -x -C "$NAME" -f "$NAME.tar" "${tar_args[@]}"
