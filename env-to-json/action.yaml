@@ -2,10 +2,10 @@ name: Env file to JSON
 description: Source a file and export selected env vnames as JSON
 
 inputs:
-  sfile:
+  source-file:
     required: true
 
-  vnames:
+  variable-names:
     required: true
     description: Space-separated list of env var names to export
 
@@ -17,14 +17,18 @@ runs:
   using: composite
   steps:
     - id: collect
+      name: Collect sourced shell variables as JSON
       shell: bash
       run: |
-        source "${{ inputs.sfile }}"
+        # Source shell file, build JSON representation of select variables
+        exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
+        trap 'echo >&2 E$? L$LINENO' ERR      
+        source "${{ inputs.source-file }}"
 
-        declare var json='{}'
-        for var in ${{ inputs.vnames }}; do
+        json='{}'
+        for var in ${{ inputs.variable-names }}; do
           json=$(jq --arg k "${var,,}" --arg v "${!var}" \
             '. + {($k): $v}' <<< "$json")
         done
 
-        cat >> "$GITHUB_OUTPUT" <<< "json=$(jq -c . <<< "$json")"
+        cat >&3 <<< "json=$(jq -c . <<< "$json")"
