@@ -3,10 +3,10 @@ description: Populate tree from git ref, (optional) normalized tar artifact
 
 inputs:
   git-url:
-    description: "GIT Repository URL"
+    description: "Git Repository URL"
     required: true
   git-ref:
-    description: "GIT Ref to fetch"
+    description: "Git Ref to fetch"
     required: true
   target:
     description: "Directory path to populate"
@@ -33,30 +33,28 @@ runs:
       name: Fetch commit tree for given ref
       shell: bash
       env:
+        GIT_URL: ${{ inputs.git-url }}
+        GIT_REF: ${{ inputs.git-ref }}
         ARCHIVE_DIR: ${{ inputs.target }}
         ARTIFACT_NAME: ${{ inputs.artifact }}
       run: |
         # Clone bare repo, fetch ref, populate tree into path, apply permsrc, prep canonical tarball
         exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
-        : "${ARCHIVE_DIR:?}"
+        : "$GIT_URL" "$GIT_REF" "${ARCHIVE_DIR:?}"
         
         test ! -e "$ARCHIVE_DIR"
+        mkdir -p "$ARCHIVE_DIR"        
         ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
 
         GIT_DIR=$(mktemp -d /tmp/repo.XXXXXX.git)
-        git clone --bare --depth 1 "${{ inputs.git-url }}" "$GIT_DIR"
-        export GIT_DIR
+        git init --bare "$GIT_DIR"
 
-        git fetch --depth=1 origin "${{ inputs.git-ref }}"
+        export GIT_DIR
+        git fetch --depth=1 "$GIT_URL" "$GIT_REF"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
-
-        git_tar=$(mktemp /tmp/git-archive.XXXXXX.tar)
-        git archive --format=tar "$COMMIT_OID" > "$git_tar"
-
-        mkdir -p "$ARCHIVE_DIR"
-        tar -C "$ARCHIVE_DIR" -xf "$git_tar"
+        git --work-tree="$ARCHIVE_DIR" checkout -f "$COMMIT_OID"
 
         if [[ "${{ inputs.permsrc }}" == "true" ]]; then
           pushd "$ARCHIVE_DIR"
@@ -82,3 +80,4 @@ runs:
         name: ${{ inputs.artifact }}
         path: ${{ steps.archive.outputs.archive-tar }}
         include-hidden-files: true
+        retention-days: 1
