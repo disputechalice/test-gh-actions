@@ -16,6 +16,8 @@ runs:
   steps:
     - name: Download artifact
       uses: actions/download-artifact@v8
+      env:
+        NODE_OPTIONS: --no-deprecation
       with:
         name: ${{ inputs.artifact }}
         path: .
