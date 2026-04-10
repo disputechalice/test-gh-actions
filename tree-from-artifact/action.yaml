@@ -1,4 +1,4 @@
-name: Fetch source tree from artifact
+name: Fetch (sub)tree from artifact
 
 inputs:
   artifact:

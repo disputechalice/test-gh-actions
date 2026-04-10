@@ -1,5 +1,5 @@
-name: Git repo tree
-description: Populate tree from git ref, upload as artifact
+name: Tree from Git ref
+description: Populate tree from git ref, (optional) upload as artifact
 
 inputs:
   git-url:
@@ -23,8 +23,8 @@ inputs:
 outputs:
   git-commit:
     value: ${{ steps.archive.outputs.git-commit }}
-  archive-tar:
-    value: ${{ steps.archive.outputs.archive-tar }}
+  tar-path:
+    value: ${{ steps.archive.outputs.tar-path }}
 
 runs:
   using: "composite"
@@ -62,14 +62,16 @@ runs:
         [[ $PERMSRC == "true" ]] \
           && (cd "$TARGET" && test -f .permsrc && source .permsrc)
 
-        ARCHIVE=$(mktemp /tmp/"${ARTIFACT:-source}".XXXXXX.tar)
+        TAR=$(mktemp /tmp/"${ARTIFACT:-source}".XXXXXX.tar)
         tar -C "$TARGET" \
             --format=gnu --sort=name --owner=0 --group=0 --numeric-owner \
-            --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE" .
+            --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$TAR" .
+        read -r TAR_SHA256 _ < <(sha256sum "$TAR")
 
         cat >&3 << EOF
         git-commit=$COMMIT_OID
-        archive-tar=$(realpath "$ARCHIVE")
+        tar-path=$(realpath "$TAR")
+        tar-sha256=$TAR_SHA256
         EOF
 
     - name: Upload artifact
@@ -77,6 +79,6 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact }}
-        path: ${{ steps.archive.outputs.archive-tar }}
+        path: ${{ steps.archive.outputs.tar-path }}
         include-hidden-files: true
         retention-days: 1
