@@ -1,12 +1,12 @@
 name: Tree from Git ref
-description: Populate tree from git ref, (optional) upload as artifact
+description: Populate tree from git ref, create normalized archive; upload as artifact (optional)
 
 inputs:
   git-url:
-    description: "Git Repository URL"
+    description: "Git repo URL"
     required: true
   git-ref:
-    description: "Git Ref to fetch"
+    description: "Git ref to fetch"
     required: true
   target:
     description: "Directory path to populate"
@@ -25,6 +25,8 @@ outputs:
     value: ${{ steps.archive.outputs.git-commit }}
   tar-path:
     value: ${{ steps.archive.outputs.tar-path }}
+  tar-sha256:
+    value: ${{ steps.archive.outputs.tar-sha256 }}
 
 runs:
   using: "composite"
@@ -39,7 +41,8 @@ runs:
         PERMSRC: ${{ inputs.permsrc }}
         ARTIFACT: ${{ inputs.artifact }}
       run: |
-        # Clone bare repo, fetch ref, populate tree into path, apply permsrc, prep canonical tarball
+        # Clone bare repo, fetch ref, populate tree into path, apply permsrc,
+        # prep canonical tarball & calculate its checksum
         exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
         : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET:?}"
