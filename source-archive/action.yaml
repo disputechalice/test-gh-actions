@@ -35,46 +35,40 @@ runs:
       env:
         GIT_URL: ${{ inputs.git-url }}
         GIT_REF: ${{ inputs.git-ref }}
-        TARGET_DIR: ${{ inputs.target }}
-        ARTIFACT_NAME: ${{ inputs.artifact }}
+        TARGET: ${{ inputs.target }}
+        ARTIFACT: ${{ inputs.artifact }}
+        PERMSRC: ${{ inputs.permsrc }}
       run: |
         # Clone bare repo, fetch ref, populate tree into path, apply permsrc, prep canonical tarball
         exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
-        : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET_DIR:?}"
+        : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET:?}"
 
-        WORK_DIR=$(pwd)
-
-        test ! -e "$TARGET_DIR"
-        mkdir -p "$TARGET_DIR"
+        test ! -e "$TARGET"
+        mkdir -p "$TARGET"
 
         export GIT_ADVICE=0
         GIT_DIR=$(mktemp -d /tmp/repo.XXXXXX.git)
         git init --bare "$GIT_DIR"
         export GIT_DIR
-        export GIT_WORK_TREE="$TARGET_DIR"
+        export GIT_WORK_TREE="$TARGET"
 
         git fetch --depth=1 "$GIT_URL" "$GIT_REF"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
         COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
         git checkout -f "$COMMIT_OID"
 
-        if [[ "${{ inputs.permsrc }}" == "true" ]]; then          
-          cd "$GIT_WORK_TREE"
-          test -f .permsrc
-          source .permsrc
-          cd "$WORK_DIR"
-        fi
+        [[ $PERMSRC == "true" ]] \
+          && (cd "$TARGET" && test -f .permsrc && source .permsrc)
 
-        ARCHIVE_TAR=$(mktemp /tmp/"${ARTIFACT_NAME:-source}".XXXXXX.tar)
-        tar -C "$GIT_WORK_TREE" \
+        ARCHIVE=$(mktemp /tmp/"${ARTIFACT:-source}".XXXXXX.tar)
+        tar -C "$TARGET" \
             --format=gnu --sort=name --owner=0 --group=0 --numeric-owner \
-            --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE_TAR" .
+            --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$ARCHIVE" .
 
         cat >&3 << EOF
-        git-version=$(git --version)
         git-commit=$COMMIT_OID
-        archive-tar=$(realpath "$ARCHIVE_TAR")
+        archive-tar=$(realpath "$ARCHIVE")
         EOF
 
     - name: Upload artifact
