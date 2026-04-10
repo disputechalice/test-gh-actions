@@ -36,19 +36,20 @@ runs:
         GIT_URL: ${{ inputs.git-url }}
         GIT_REF: ${{ inputs.git-ref }}
         TARGET: ${{ inputs.target }}
-        ARTIFACT: ${{ inputs.artifact }}
         PERMSRC: ${{ inputs.permsrc }}
+        ARTIFACT: ${{ inputs.artifact }}
       run: |
         # Clone bare repo, fetch ref, populate tree into path, apply permsrc, prep canonical tarball
         exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
         : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET:?}"
+        [[ -z "$ARTIFACT" || "$ARTIFACT" =~ ^[a-zA-Z0-9._-]+$ ]]
 
         test ! -e "$TARGET"
         mkdir -p "$TARGET"
 
         export GIT_ADVICE=0
-        GIT_DIR=$(mktemp -d /tmp/repo.XXXXXX.git)
+        GIT_DIR=$(mktemp -d "/tmp/${ARTIFACT:-source}.XXXXXX.git")
         git init --bare "$GIT_DIR"
         export GIT_DIR
         export GIT_WORK_TREE="$TARGET"
