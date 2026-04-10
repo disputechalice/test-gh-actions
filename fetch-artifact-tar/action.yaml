@@ -15,9 +15,7 @@ runs:
   using: composite
   steps:
     - name: Download artifact
-      uses: actions/download-artifact@v8
-      env:
-        NODE_OPTIONS: --no-deprecation
+      uses: actions/download-artifact@v7
       with:
         name: ${{ inputs.artifact }}
         path: .
