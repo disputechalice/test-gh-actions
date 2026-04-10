@@ -1,5 +1,5 @@
 name: Git repo tree
-description: Populate tree from git ref, (optional) normalized tar artifact
+description: Populate tree from git ref, upload as artifact
 
 inputs:
   git-url:

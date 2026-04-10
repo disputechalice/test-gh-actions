@@ -1,11 +1,11 @@
-name: Fetch artifact tar
+name: Fetch source tree from artifact
 
 inputs:
   artifact:
     description: "Artifact name"
     required: true
   target:
-    description: "Target path to extract to"
+    description: "Target directory path to extract to"
     required: true
   prefix:
     description: "Prefix path inside archive to strip out"
@@ -15,7 +15,7 @@ runs:
   using: composite
   steps:
     - name: Download artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.artifact }}
         path: .
