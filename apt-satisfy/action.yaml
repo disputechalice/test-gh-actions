@@ -1,0 +1,21 @@
+name: APT satisfy
+
+description: >
+  APT satisfy set of packages on the runner under sanitised config
+
+inputs:
+  expression:
+    required: true
+    description: "apt satisfy expression"
+
+runs:
+  using: composite
+  steps:
+    - name: Install apt packages
+      shell: bash
+      run: |
+        export APT_CONFIG="$(realpath "${{ github.action_path }}/apt.conf")"
+        export DEBIAN_FRONTEND=noninteractive
+
+        sudo -E apt-get update
+        sudo -E apt-get satisfy ${{ inputs.expression }}
