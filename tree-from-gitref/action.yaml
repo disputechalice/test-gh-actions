@@ -23,6 +23,8 @@ inputs:
 outputs:
   git-commit:
     value: ${{ steps.archive.outputs.git-commit }}
+  git-commit-epoch:
+    value: ${{ steps.archive.outputs.git-commit-epoch }}
   tar-path:
     value: ${{ steps.archive.outputs.tar-path }}
   tar-sha256:
@@ -59,7 +61,7 @@ runs:
 
         git fetch --depth=1 "$GIT_URL" "$GIT_REF"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
-        COMMIT_EPOCH=$(git log -1 --format=%ct "$COMMIT_OID")
+        COMMIT_EPOCH=$(git show -s --format=%ct "$COMMIT_OID")
         git checkout -f "$COMMIT_OID"
 
         [[ $PERMSRC == "true" ]] \
@@ -73,6 +75,7 @@ runs:
 
         cat >&3 << EOF
         git-commit=$COMMIT_OID
+        git-commit-epoch=$COMMIT_EPOCH
         tar-path=$(realpath "$TAR")
         tar-sha256=$TAR_SHA256
         EOF
