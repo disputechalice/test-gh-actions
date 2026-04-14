@@ -45,7 +45,6 @@ runs:
       run: |
         # Clone bare repo, fetch ref, populate tree into path, apply permsrc,
         # prep canonical tarball & calculate its checksum
-        exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")
         trap 'echo >&2 E$? L$LINENO' ERR
         : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET:?}"
         [[ -z "$ARTIFACT" || "$ARTIFACT" =~ ^[a-zA-Z0-9._-]+$ ]]
@@ -73,7 +72,7 @@ runs:
             --mtime="@${COMMIT_EPOCH}" --clamp-mtime -cf "$TAR" .
         read -r TAR_SHA256 _ < <(sha256sum "$TAR")
 
-        cat >&3 << EOF
+        cat >(tee -a "$GITHUB_OUTPUT" >&2) << EOF
         git-commit=$COMMIT_OID
         git-commit-epoch=$COMMIT_EPOCH
         tar-path=$(realpath "$TAR")
