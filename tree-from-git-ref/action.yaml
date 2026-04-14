@@ -70,5 +70,6 @@ runs:
         TARGET: ${{ steps.checkout.outputs.path }}
       run: |
         # Source .permsrc
+        ls -la /tmp
         cd "$TARGET"
         source .permsrc
