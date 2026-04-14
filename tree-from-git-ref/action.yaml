@@ -9,15 +9,18 @@ inputs:
   git-ref:
     description: "Reference or object ID to fetch"
     required: true
-  target:
+  target-path:
     description: "Directory path to populate"
-    required: true
+    required: false
+    default: ''
   permsrc:
     description: "Apply .permsrc flag"
     required: false
     default: "false"
 
 outputs:
+  target-path:
+    value: ${{ steps.checkout.outputs.target-path }}
   git-commit:
     value: ${{ steps.checkout.outputs.git-commit }}
   git-commit-epoch:
@@ -32,13 +35,14 @@ runs:
       env:
         GIT_URL: ${{ inputs.git-url }}
         GIT_REF: ${{ inputs.git-ref }}
-        TARGET: ${{ inputs.target }}
+        TARGET: ${{ inputs.target-path }}
       run: |
         # Clone bare repo, fetch ref, populate tree into path
         trap 'echo >&2 E$? L$LINENO' ERR
-        : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET:?}"
+        : "${GIT_URL:?}" "${GIT_REF:?}"
+        [[ -z "$TARGET" ]] || test ! -e "$TARGET"
+        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d /tmp/tree.XXXXXX)"
 
-        test ! -e "$TARGET"
         mkdir -p "$TARGET"
 
         export GIT_ADVICE=0
@@ -53,6 +57,7 @@ runs:
         git checkout -f "$COMMIT_OID"
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
+        target-path=$TARGET        
         git-commit=$COMMIT_OID
         git-commit-epoch=$COMMIT_EPOCH
         EOF
@@ -62,7 +67,7 @@ runs:
       if: ${{ inputs.permsrc == 'true' }}      
       shell: bash
       env:
-        TARGET: ${{ inputs.target }}
+        TARGET: ${{ steps.checkout.outputs.target-path }}
       run: |
         # Source .permsrc
         cd "$TARGET"
