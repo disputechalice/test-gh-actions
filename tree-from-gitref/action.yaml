@@ -15,20 +15,12 @@ inputs:
     description: "Apply .permsrc"
     required: false
     default: "false"
-  artifact:
-    description: "Artifact name (if to be uploaded)"
-    required: false
-    default: ''
 
 outputs:
   git-commit:
     value: ${{ steps.checkout.outputs.git-commit }}
   git-commit-epoch:
     value: ${{ steps.checkout.outputs.git-commit-epoch }}
-  tar-path:
-    value: ${{ steps.archive.outputs.tar-path }}
-  tar-sha256:
-    value: ${{ steps.archive.outputs.tar-sha256 }}
 
 runs:
   using: "composite"
@@ -74,35 +66,3 @@ runs:
         # Source .permsrc
         cd "$TARGET"
         source .permsrc
-
-    - id: archive
-      name: Canonical archive
-      shell: bash
-      env:
-        TARGET: ${{ inputs.target }}
-        NAME: ${{ inputs.artifact }}
-        EPOCH: ${{ steps.checkout.outputs.git-commit-epoch }}
-      run: |
-        # Make tarball & calculate its checksum
-        [[ -z "$NAME" || "$NAME" =~ ^[a-zA-Z0-9._-]+$ ]]
-
-        TAR=$(mktemp /tmp/"${NAME:-source}".XXXXXX.tar)
-
-        tar -C "$TARGET" \
-            --format=gnu --sort=name --owner=0 --group=0 --numeric-owner \
-            --mtime="@${EPOCH}" --clamp-mtime -cf "$TAR" .
-        read -r TAR_SHA256 _ < <(sha256sum "$TAR")
-
-        tee -a "$GITHUB_OUTPUT" >&2 << EOF
-        tar-path=$(realpath "$TAR")
-        tar-sha256=$TAR_SHA256
-        EOF
-
-    - name: Upload artifact
-      if: ${{ inputs.artifact != '' }}
-      uses: actions/upload-artifact@v7
-      with:
-        name: ${{ inputs.artifact }}
-        path: ${{ steps.archive.outputs.tar-path }}
-        include-hidden-files: true
-        retention-days: 1
