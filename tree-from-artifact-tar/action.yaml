@@ -1,4 +1,4 @@
-name: Fetch (sub)tree from artifact
+name: Fetch (sub)tree from artifact tar
 
 inputs:
   artifact:

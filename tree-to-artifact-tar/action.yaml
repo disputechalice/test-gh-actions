@@ -1,4 +1,4 @@
-name: Canonical tar
+name: Create canonical tar from tree, upload as artifact (optional)
 description: Create deterministic tarball
 
 inputs:
@@ -15,7 +15,7 @@ inputs:
     description: "Timestamp as epoch seconds"
     required: true
 
-  artifact:
+  upload:
     required: false
     default: "false"
     description: "Upload as artifact"
@@ -61,7 +61,7 @@ runs:
         EOF
 
     - name: Upload artifact
-      if: ${{ inputs.artifact == 'true' }}
+      if: ${{ inputs.upload == 'true' }}
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.name }}
