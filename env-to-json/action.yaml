@@ -30,4 +30,5 @@ runs:
             '. + {($k): $v}' <<< "$json")
         done
 
-        cat >(tee -a "$GITHUB_OUTPUT" >&2) <<< "json=$(jq -c . <<< "$json")"
+        cat >(tee /dev/stderr >> "$GITHUB_OUTPUT") \
+          <<< "json=$(jq -c . <<< "$json")"
