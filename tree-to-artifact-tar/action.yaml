@@ -17,7 +17,7 @@ inputs:
 
   upload:
     required: false
-    default: "false"
+    default: "true"
     description: "Upload as artifact"
 
 outputs:
