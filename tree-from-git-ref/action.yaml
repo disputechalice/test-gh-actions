@@ -57,7 +57,7 @@ runs:
         git checkout -f "$COMMIT_OID"
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
-        path=$TARGET        
+        path=$TARGET
         git-commit=$COMMIT_OID
         git-commit-epoch=$COMMIT_EPOCH
         EOF
@@ -70,6 +70,5 @@ runs:
         TARGET: ${{ steps.checkout.outputs.path }}
       run: |
         # Source .permsrc
-        ls -la /tmp
         cd "$TARGET"
         source .permsrc
