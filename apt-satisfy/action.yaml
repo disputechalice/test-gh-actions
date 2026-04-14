@@ -1,5 +1,4 @@
 name: APT satisfy
-
 description: >
   APT satisfy set of packages on the runner under sanitised config
 

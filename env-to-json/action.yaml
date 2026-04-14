@@ -1,10 +1,10 @@
 name: Env file to JSON
-description: Source a file and export selected env vnames as JSON
+description: >
+  Source a file and export selected env variables as JSON
 
 inputs:
   source-file:
     required: true
-
   variable-names:
     required: true
     description: Space-separated list of env var names to export

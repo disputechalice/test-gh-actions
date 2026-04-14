@@ -1,5 +1,6 @@
 name: Tree from Git ref
-description: Populate tree from git ref, create normalized archive; upload as artifact (optional)
+description: >
+  Populate tree from git reference
 
 inputs:
   git-url:
@@ -23,7 +24,7 @@ outputs:
     value: ${{ steps.checkout.outputs.git-commit-epoch }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - id: checkout
       name: Fetch commit tree for given ref

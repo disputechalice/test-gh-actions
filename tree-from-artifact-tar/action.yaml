@@ -1,4 +1,6 @@
-name: Fetch (sub)tree from artifact tar
+name: Tree from artifact tar
+description: >
+  Populate tree or its subtree (optional prefix) from artifact tar
 
 inputs:
   artifact:
@@ -11,6 +13,7 @@ inputs:
     description: "Prefix path inside archive to strip out"
     required: false
     default: ''
+
 runs:
   using: composite
   steps:
