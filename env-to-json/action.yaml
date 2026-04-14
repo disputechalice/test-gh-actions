@@ -21,7 +21,9 @@ runs:
       shell: bash
       run: |
         # Source shell file, build JSON representation of select variables
-        trap 'echo >&2 E$? L$LINENO' ERR      
+        exec 3> >(tee -a "$GITHUB_OUTPUT" >&2)
+        trap 'echo >&2 E$? L$LINENO' ERR
+
         source "${{ inputs.source-file }}"
 
         json='{}'
@@ -30,5 +32,4 @@ runs:
             '. + {($k): $v}' <<< "$json")
         done
 
-        cat >(tee /dev/stderr >> "$GITHUB_OUTPUT") \
-          <<< "json=$(jq -c . <<< "$json")"
+        cat >&3 <<< "json=$(jq -c . <<< "$json")"

@@ -45,7 +45,7 @@ runs:
       run: |
         # Clone bare repo, fetch ref, populate tree into path, apply permsrc,
         # prep canonical tarball & calculate its checksum
-        exec 3> >(tee /dev/stderr >> "$GITHUB_OUTPUT")        
+        exec 3> >(tee -a "$GITHUB_OUTPUT" >&2)
         trap 'echo >&2 E$? L$LINENO' ERR
         : "${GIT_URL:?}" "${GIT_REF:?}" "${TARGET:?}"
         [[ -z "$ARTIFACT" || "$ARTIFACT" =~ ^[a-zA-Z0-9._-]+$ ]]
