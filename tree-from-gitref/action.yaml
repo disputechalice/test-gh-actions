@@ -66,14 +66,14 @@ runs:
 
     - id: perms
       name: Apply permissions
+      if: ${{ inputs.permsrc == 'true' }}      
       shell: bash
       env:
-        PERMSRC: ${{ inputs.permsrc }}
         TARGET: ${{ inputs.target }}
       run: |
         # Source .permsrc
-        [[ $PERMSRC == "true" ]] \
-          && (cd "$TARGET" && test -f .permsrc && source .permsrc)
+        cd "$TARGET"
+        source .permsrc
 
     - id: archive
       name: Canonical archive
