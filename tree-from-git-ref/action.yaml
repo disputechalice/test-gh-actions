@@ -19,8 +19,8 @@ inputs:
     default: "false"
 
 outputs:
-  target-path:
-    value: ${{ steps.checkout.outputs.target-path }}
+  path:
+    value: ${{ steps.checkout.outputs.path }}
   git-commit:
     value: ${{ steps.checkout.outputs.git-commit }}
   git-commit-epoch:
@@ -57,7 +57,7 @@ runs:
         git checkout -f "$COMMIT_OID"
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
-        target-path=$TARGET        
+        path=$TARGET        
         git-commit=$COMMIT_OID
         git-commit-epoch=$COMMIT_EPOCH
         EOF
@@ -67,7 +67,7 @@ runs:
       if: ${{ inputs.permsrc == 'true' }}      
       shell: bash
       env:
-        TARGET: ${{ steps.checkout.outputs.target-path }}
+        TARGET: ${{ steps.checkout.outputs.path }}
       run: |
         # Source .permsrc
         cd "$TARGET"
