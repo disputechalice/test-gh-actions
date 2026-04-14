@@ -1,19 +1,19 @@
 name: Tree from Git ref
 description: >
-  Populate tree from git reference
+  Populate tree from git reference or commit hash
 
 inputs:
   git-url:
-    description: "Git repo URL"
+    description: "Git repository URL"
     required: true
   git-ref:
-    description: "Git ref to fetch"
+    description: "Reference or object ID to fetch"
     required: true
   target:
     description: "Directory path to populate"
     required: true
   permsrc:
-    description: "Apply .permsrc"
+    description: "Apply .permsrc flag"
     required: false
     default: "false"
 
