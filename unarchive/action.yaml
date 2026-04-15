@@ -1,59 +1,46 @@
-name: Tree from artifact tar
+name: Tree from artifact archive
 description: >
-  Populate tree or its subtree (optional prefix) from artifact tar
+  Populate tree from artifact archive
 
 inputs:
   artifact:
     description: "Artifact name"
     required: true
   target:
-    description: "Target directory path to extract to"
-    required: false
-    default: ''
-  prefix:
-    description: "Prefix path inside archive to strip out"
+    description: "Target directory (optional, must exist)"
     required: false
     default: ''
 
 outputs:
   target-path:
-    value: ${{ steps.unarchive.outputs.path }}
+    value: ${{ steps.extract.outputs.path }}
 
 runs:
   using: composite
   steps:
-    - name: Download artifact
+    - id: artifact
+      name: Download artifact
       uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.artifact }}
+        skip-decompress: true
 
-    - id: unarchive
+    - id: extract
       name: Extract payload or its part
       env:
-        ARTIFACT: ${{ inputs.artifact }}
+        ARTIFACT: ${{ steps.artifact.outputs.download-path }}/${{ inputs.artifact }}
         TARGET: ${{ inputs.target }}
-        PREFIX: ${{ inputs.prefix }}
       shell: bash
       run: |
-        # Extract tree from artifact into path, optionally strip out subtree only
-        # Ensure single tarball named <artifact>.*.tar only
-        trap 'echo >&2 E$? L$LINENO' ERR      
+        # Extract tree from archive into path or new temp dir
         : "${ARTIFACT:?}"
       
         test -f "$ARTIFACT"
 
-        [[ -z "$TARGET" ]] || test ! -e "$TARGET"
         [[ -n "$TARGET" ]] || TARGET="$(mktemp -d "/tmp/tree.XXXXXX")"
-        mkdir -p "$TARGET"
+        test -d "$TARGET"
 
-        declare -a tar_args=()
-
-        if [[ -n "$PREFIX" ]]; then
-          IFS='/' read -r -a parts <<< "$PREFIX"
-          tar_args+=(--strip-components=${#parts[@]} "$PREFIX")
-        fi
-
-        tar -x -C "$TARGET" -f "$ARTIFACT" "${tar_args[@]}"
+        tar -x -C "$TARGET" -f "$ARTIFACT"
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
         path=$TARGET
