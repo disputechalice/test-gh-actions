@@ -23,10 +23,10 @@ outputs:
     value: ${{ steps.archive.outputs.git-commit }}
   git-commit-epoch:
     value: ${{ steps.archive.outputs.git-commit-epoch }}
-  path:
+  target-path:
     value: ${{ steps.target.outputs.path }}
-  artifact-id:
-    value: ${{ steps.artifact.artifact-id }}
+  artifact-name:
+    value: ${{ steps.archive.outputs.name }}
 
 runs:
   using: composite
@@ -57,6 +57,7 @@ runs:
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
         path=$ARCHIVE
+        name=${ARCHIVE##*/}
         git-commit=$COMMIT_OID
         git-commit-epoch=$COMMIT_EPOCH
         EOF
