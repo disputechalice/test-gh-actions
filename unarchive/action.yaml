@@ -6,13 +6,9 @@ inputs:
   artifact:
     description: "Artifact name"
     required: true
-  target:
-    description: "Target directory (optional, must exist)"
-    required: false
-    default: ''
 
 outputs:
-  target-path:
+  path:
     value: ${{ steps.extract.outputs.path }}
 
 runs:
@@ -28,19 +24,17 @@ runs:
     - id: extract
       name: Extract payload or its part
       env:
-        ARTIFACT: ${{ steps.artifact.outputs.download-path }}/${{ inputs.artifact }}
-        TARGET: ${{ inputs.target }}
+        ARCHIVE: ${{ steps.artifact.outputs.download-path }}/${{ inputs.artifact }}
       shell: bash
       run: |
-        # Extract tree from archive into path or new temp dir
-        : "${ARTIFACT:?}"
+        # Extract tree from archive into a temp dir
+        : "${ARCHIVE:?}"
       
-        test -f "$ARTIFACT"
+        test -f "$ARCHIVE"
 
-        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d "/tmp/tree.XXXXXX")"
-        test -d "$TARGET"
+        TARGET="$(mktemp -d "/tmp/tree.XXXXXX")"
 
-        tar -x -C "$TARGET" -f "$ARTIFACT"
+        tar -x -C "$TARGET" -f "$ARCHIVE"
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
         path=$TARGET
