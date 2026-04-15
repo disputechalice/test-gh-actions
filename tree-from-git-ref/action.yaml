@@ -4,10 +4,10 @@ description: >
 
 inputs:
   git-url:
-    description: "Git repository URL"
+    description: "Repository URL"
     required: true
   git-ref:
-    description: "Reference or object ID to fetch"
+    description: "Reference to fetch"
     required: true
   target-path:
     description: "Directory path to populate"
@@ -33,12 +33,12 @@ runs:
   steps:
     - id: archive
       name: Obtain tree archive for given ref
-      description: Create bare repo, fetch commit, create archive
       shell: bash
       env:
         GIT_URL: ${{ inputs.git-url }}
         GIT_REF: ${{ inputs.git-ref }}
       run: |
+        # Create bare repo, fetch commit, create archive
         : "${GIT_URL:?} ${GIT_REF:?}"
 
         GIT_DIR=$(mktemp -d "/tmp/repo.XXXXXX.git")
