@@ -33,11 +33,9 @@ runs:
         # Ensure single tarball named <artifact>.*.tar only
         trap 'echo >&2 E$? L$LINENO' ERR      
         : "${ARTIFACT:?}" "${TARGET:?}"
-
-        found=( "$ARTIFACT".*.tar )
-        (( ${#found[@]} == 1 ))
-        archive_tar="${found[0]}"
       
+        test -f "$ARTIFACT"
+
         declare -a tar_args=()
 
         if [[ -n "$PREFIX" ]]; then
@@ -48,4 +46,4 @@ runs:
         test ! -e "$TARGET"
         mkdir -p "$TARGET"
 
-        tar -x -C "$TARGET" -f "$archive_tar" "${tar_args[@]}"
+        tar -x -C "$TARGET" -f "$ARTIFACT" "${tar_args[@]}"
