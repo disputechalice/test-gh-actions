@@ -8,11 +8,16 @@ inputs:
     required: true
   target:
     description: "Target directory path to extract to"
-    required: true
+    required: false
+    default: ''
   prefix:
     description: "Prefix path inside archive to strip out"
     required: false
     default: ''
+
+outputs:
+  target-path:
+    value: ${{ steps.unarchive.outputs.path }}
 
 runs:
   using: composite
@@ -22,7 +27,8 @@ runs:
       with:
         name: ${{ inputs.artifact }}
 
-    - name: Extract payload or its part
+    - id: unarchive
+      name: Extract payload or its part
       env:
         ARTIFACT: ${{ inputs.artifact }}
         TARGET: ${{ inputs.target }}
@@ -32,9 +38,13 @@ runs:
         # Extract tree from artifact into path, optionally strip out subtree only
         # Ensure single tarball named <artifact>.*.tar only
         trap 'echo >&2 E$? L$LINENO' ERR      
-        : "${ARTIFACT:?}" "${TARGET:?}"
+        : "${ARTIFACT:?}"
       
         test -f "$ARTIFACT"
+
+        [[ -z "$TARGET" ]] || test ! -e "$TARGET"
+        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d "/tmp/${ARTIFACT}.XXXXXX")"
+        mkdir -p "$TARGET"
 
         declare -a tar_args=()
 
@@ -43,7 +53,8 @@ runs:
           tar_args+=(--strip-components=${#parts[@]} "$PREFIX")
         fi
 
-        test ! -e "$TARGET"
-        mkdir -p "$TARGET"
-
         tar -x -C "$TARGET" -f "$ARTIFACT" "${tar_args[@]}"
+
+        tee -a "$GITHUB_OUTPUT" >&2 << EOF
+        path=$TARGET
+        EOF
