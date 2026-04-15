@@ -21,7 +21,7 @@ runs:
       uses: actions/download-artifact@v8
       with:
         name: ${{ inputs.artifact }}
-        path: .
+
     - name: Extract payload or its part
       env:
         ARTIFACT: ${{ inputs.artifact }}

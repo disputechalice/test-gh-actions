@@ -13,62 +13,79 @@ inputs:
     description: "Directory path to populate"
     required: false
     default: ''
-  permsrc:
-    description: "Apply .permsrc flag"
+  artifact:
+    description: "Upload archive as artifact"
     required: false
-    default: "false"
+    default: true
 
 outputs:
-  path:
-    value: ${{ steps.checkout.outputs.path }}
   git-commit:
-    value: ${{ steps.checkout.outputs.git-commit }}
+    value: ${{ steps.archive.outputs.git-commit }}
   git-commit-epoch:
-    value: ${{ steps.checkout.outputs.git-commit-epoch }}
+    value: ${{ steps.archive.outputs.git-commit-epoch }}
+  path:
+    value: ${{ steps.target.outputs.path }}
+  artifact-id:
+    value: ${{ steps.artifact.artifact-id }}
 
 runs:
   using: composite
   steps:
-    - id: checkout
-      name: Fetch commit tree for given ref
+    - id: archive
+      name: Obtain tree archive for given ref
+      description: Create bare repo, fetch commit, create archive
       shell: bash
       env:
         GIT_URL: ${{ inputs.git-url }}
         GIT_REF: ${{ inputs.git-ref }}
-        TARGET: ${{ inputs.target-path }}
       run: |
-        # Clone bare repo, fetch ref, populate tree into path
-        trap 'echo >&2 E$? L$LINENO' ERR
-        : "${GIT_URL:?}" "${GIT_REF:?}"
-        [[ -z "$TARGET" ]] || test ! -e "$TARGET"
-        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d /tmp/tree.XXXXXX)"
+        : "${GIT_URL:?} ${GIT_REF:?}"
 
-        mkdir -p "$TARGET"
+        GIT_DIR=$(mktemp -d "/tmp/repo.XXXXXX.git")
 
         export GIT_ADVICE=0
-        GIT_DIR=$(mktemp -d "/tmp/source.XXXXXX.git")
         git init --bare "$GIT_DIR"
         export GIT_DIR
-        export GIT_WORK_TREE="$TARGET"
 
         git fetch --depth=1 "$GIT_URL" "$GIT_REF"
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
         COMMIT_EPOCH=$(git show -s --format=%ct "$COMMIT_OID")
-        git checkout -f "$COMMIT_OID"
+
+        ARCHIVE="$(mktemp "/tmp/archive-${COMMIT_OID}.XXXXXX.tar")"
+        git archive --format=tar "$COMMIT_OID" > "$ARCHIVE"
 
         tee -a "$GITHUB_OUTPUT" >&2 << EOF
-        path=$TARGET
+        path=$ARCHIVE
         git-commit=$COMMIT_OID
         git-commit-epoch=$COMMIT_EPOCH
         EOF
 
-    - id: perms
-      name: Apply permissions
-      if: ${{ inputs.permsrc == 'true' }}      
+    - id: target
+      name: Populate tree from archive
       shell: bash
       env:
-        TARGET: ${{ steps.checkout.outputs.path }}
+        COMMIT: ${{ steps.archive.outputs.git-commit }}
+        ARCHIVE: ${{ steps.archive.outputs.path }}
+        TARGET: ${{ inputs.target-path }}
       run: |
-        # Source .permsrc
-        cd "$TARGET"
-        source .permsrc
+        : "${COMMIT:?} ${ARCHIVE:?}"
+        
+        [[ -z "$TARGET" ]] || test ! -e "$TARGET"
+        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d /tmp/commit-${COMMIT}.XXXXXX")"
+
+        mkdir -p "$TARGET"
+        tar -xf "$ARCHIVE" -C "$TARGET"
+
+        tee -a "$GITHUB_OUTPUT" >&2 << EOF
+        path=$TARGET
+        EOF
+
+    - id: artifact
+      name: Upload artifact
+      if: ${{ inputs.artifact == 'true' }}
+      uses: actions/upload-artifact@v7
+      with:
+        path: ${{ steps.archive.outputs.path }}
+        archive: false
+        include-hidden-files: true
+        retention-days: 1
