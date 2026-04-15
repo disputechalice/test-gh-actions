@@ -39,6 +39,7 @@ runs:
         GIT_REF: ${{ inputs.git-ref }}
       run: |
         # Create bare repo, fetch commit, create archive
+        trap 'echo >&2 E$? L$LINENO' ERR        
         : "${GIT_URL:?} ${GIT_REF:?}"
 
         GIT_DIR=$(mktemp -d "/tmp/repo.XXXXXX.git")
@@ -68,10 +69,12 @@ runs:
         ARCHIVE: ${{ steps.archive.outputs.path }}
         TARGET: ${{ inputs.target-path }}
       run: |
+        # Untar to specified or generic directory
+        trap 'echo >&2 E$? L$LINENO' ERR
         : "${COMMIT:?} ${ARCHIVE:?}"
         
         [[ -z "$TARGET" ]] || test ! -e "$TARGET"
-        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d /tmp/commit-${COMMIT}.XXXXXX")"
+        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d "/tmp/commit-${COMMIT}.XXXXXX")"
 
         mkdir -p "$TARGET"
         tar -xf "$ARCHIVE" -C "$TARGET"
