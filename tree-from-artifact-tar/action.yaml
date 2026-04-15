@@ -43,7 +43,7 @@ runs:
         test -f "$ARTIFACT"
 
         [[ -z "$TARGET" ]] || test ! -e "$TARGET"
-        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d "/tmp/${ARTIFACT}.XXXXXX")"
+        [[ -n "$TARGET" ]] || TARGET="$(mktemp -d "/tmp/tree.XXXXXX")"
         mkdir -p "$TARGET"
 
         declare -a tar_args=()
