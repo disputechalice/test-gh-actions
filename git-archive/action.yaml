@@ -105,7 +105,8 @@ runs:
 
         tar --extract --file "$ARCHIVE" --directory "$TARGET"
 
-        >&2 echo "::notice::step output"
+        >&2 echo "::group::output"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
+        >&2 echo "::endgroup:"
         path=$TARGET
         EOF
