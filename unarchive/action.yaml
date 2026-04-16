@@ -1,4 +1,4 @@
-name: Tree from artifact archive
+name: Fetch archive artifact
 description: >
   Populate tree from artifact archive
 

@@ -1,10 +1,10 @@
-name: Make tree into canonical tar artifact
+name: Archive artifact
 description: >
   Create deterministic tarball, upload as artifact (default)
 
 inputs:
   path:
-    description: "Directory to archive"
+    description: "Path to archive"
     required: true
   name:
     description: "Prefix for .tar filename (optional)"
@@ -14,9 +14,9 @@ inputs:
     description: "Timestamp as epoch seconds"
     required: true
   upload:
+    description: "Upload archive as artifact (default)"
     required: false
     default: "true"
-    description: "Upload as artifact"
 
 outputs:
   tar-path:
@@ -47,7 +47,6 @@ runs:
           --group=0 \
           --numeric-owner \
           --mtime="@$EPOCH" \
-          --clamp-mtime \
           -cf "$TAR" .
 
         read -r TAR_SHA256 _ < <(sha256sum "$TAR")

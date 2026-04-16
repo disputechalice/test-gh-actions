@@ -1,9 +1,10 @@
 name: Env file to JSON
 description: >
-  Source a file and export selected env variables as JSON
+  Parse env file into lower-case JSON key/value array
 
 inputs:
-  source:
+  env-file:
+    description: "Env file to parse"
     required: true
 
 outputs:
@@ -17,7 +18,8 @@ runs:
       name: Parse simple env file values as JSON
       shell: bash
       run: |
-        # Iterate lines in file, no trimming around =
+        # Iterate lines in file , no trimming around values
+
         trap 'echo >&2 E$? L$LINENO' ERR
 
         json='{}'
@@ -34,6 +36,6 @@ runs:
 
           json=$(jq --arg k "${key,,}" --arg v "$value" \
             '. + {($k): $v}' <<< "$json")
-        done < "${{ inputs.source }}"
+        done < "${{ inputs.env-file }}"
 
         tee -a "$GITHUB_OUTPUT" >&2 <<< "json=$(jq -c . <<< "$json")"

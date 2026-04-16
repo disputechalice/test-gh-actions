@@ -1,13 +1,14 @@
-name: Tree from Git ref
+name: Git archive artifact
 description: >
-  Populate tree from git reference or commit hash
+  Create archive from git repository, upload as artifact (default),
+  extract locally (optional)
 
 inputs:
   git-repo:
-    description: "Repository URL"
+    description: "Git repository"
     required: true
   git-ref:
-    description: "Reference to fetch"
+    description: "Git reference"
     required: true
   upload:
     description: "Upload archive as artifact (default)"
@@ -32,13 +33,14 @@ runs:
   using: composite
   steps:
     - id: archive
-      name: Obtain tree archive for given ref
+      name: Create git archive
       shell: bash
       env:
         GIT_REPO: ${{ inputs.git-repo }}
         GIT_REF: ${{ inputs.git-ref }}
       run: |
         # Create bare repo, fetch commit, create archive
+
         trap 'echo >&2 E$? L$LINENO' ERR        
         : "${GIT_REPO:?} ${GIT_REF:?}"
 
@@ -63,7 +65,7 @@ runs:
         EOF
 
     - id: artifact
-      name: Upload as artifact
+      name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
       uses: actions/upload-artifact@v7
       with:
@@ -81,6 +83,7 @@ runs:
         ARCHIVE: ${{ steps.archive.outputs.path }}
       run: |
         # Untar to temp directory
+
         : "${COMMIT:?} ${ARCHIVE:?}"
         
         TARGET="$(mktemp -d "/tmp/commit-${COMMIT}.XXXXXX")"
