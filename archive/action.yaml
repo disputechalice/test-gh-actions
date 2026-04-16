@@ -51,7 +51,8 @@ runs:
 
         read -r TAR_SHA256 _ < <(sha256sum "$TAR")
 
-        tee -a "$GITHUB_OUTPUT" >&2 << EOF
+        >&2 echo "-- OUTPUT"
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
         tar-path=$TAR
         tar-sha256=$TAR_SHA256
         EOF

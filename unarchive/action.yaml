@@ -36,6 +36,7 @@ runs:
 
         tar -x -C "$TARGET" -f "$ARCHIVE"
 
-        tee -a "$GITHUB_OUTPUT" >&2 << EOF
+        >&2 echo "-- OUTPUT"
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
         path=$TARGET
         EOF

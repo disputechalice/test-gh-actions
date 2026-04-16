@@ -90,6 +90,7 @@ runs:
 
         tar -xf "$ARCHIVE" -C "$TARGET"
 
-        tee -a "$GITHUB_OUTPUT" >&2 << EOF
+        >&2 echo "-- OUTPUT"
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
         path=$TARGET
         EOF
