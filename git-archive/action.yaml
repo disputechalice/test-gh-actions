@@ -30,8 +30,8 @@ outputs:
     value: ${{ steps.extract.outputs.path }}
   git-commit:
     value: ${{ steps.archive.outputs.git-commit }}
-  git-commit-epoch:
-    value: ${{ steps.archive.outputs.git-commit-epoch }}
+  git-commit-ctime:
+    value: ${{ steps.archive.outputs.git-commit-ctime }}
 
 runs:
   using: composite
@@ -50,25 +50,25 @@ runs:
 
         [[ "$BASENAME" =~ ^[a-zA-Z0-9._-]+$ ]]
 
-        GIT_DIR=$(mktemp -d "/tmp/repo.XXXXXX.git")
+        GIT_DIR="$(mktemp -d --tmpdir --suffix=.git "${BASENAME}.XXXXXX")"
 
         export GIT_ADVICE=0
         git init --bare "$GIT_DIR"
         export GIT_DIR
 
         git fetch --depth=1 "$GIT_REPO" "$GIT_REF"
-        COMMIT_OID=$(git rev-parse FETCH_HEAD)
-        COMMIT_EPOCH=$(git show -s --format=%ct "$COMMIT_OID")
+        COMMIT="$(git rev-parse FETCH_HEAD)"
+        COMMIT_CT="$(git show -s --format=%ct "$COMMIT")"
 
-        ARCHIVE=$(mktemp --tmpdir --suffix=.tar "${BASENAME}-${COMMIT_OID}.XXXXXX")
-        git archive --format=tar "$COMMIT_OID" > "$ARCHIVE"
+        ARCHIVE="$(mktemp --tmpdir --suffix=.tar "${BASENAME}-${COMMIT}.XXXXXX")"
+        git archive --format=tar "$COMMIT" > "$ARCHIVE"
 
         >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         path=$ARCHIVE
         name=${ARCHIVE##*/}
-        git-commit=$COMMIT_OID
-        git-commit-epoch=$COMMIT_EPOCH
+        git-commit=$COMMIT
+        git-commit-ctime=$COMMIT_CT
         EOF
 
     - id: artifact
