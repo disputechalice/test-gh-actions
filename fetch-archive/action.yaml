@@ -44,6 +44,6 @@ runs:
 
         >&2 echo "::group::output"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
-        >&2 echo "::endgroup::"
         path=$TARGET
         EOF
+        >&2 echo "::endgroup::"
