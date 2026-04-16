@@ -6,23 +6,26 @@ inputs:
   path:
     description: "Path to archive"
     required: true
-  name:
-    description: "Prefix for .tar filename (optional)"
+  name-prefix:
+    description: "Prefix for filename (optional)"
     required: false
     default: "source"
-  epoch:
-    description: "Timestamp as epoch seconds"
-    required: true
+  mtime:
+    description: "Timestamp as epoch seconds (optional)"
+    required: false
+    default: ''
   upload:
     description: "Upload archive as artifact (default)"
     required: false
     default: "true"
 
 outputs:
-  tar-path:
-    value: ${{ steps.archive.outputs.tar-path }}
-  tar-sha256:
-    value: ${{ steps.archive.outputs.tar-sha256 }}
+  name:
+    value: ${{ steps.archive.outputs.name }}
+  path:
+    value: ${{ steps.archive.outputs.path }}
+  checksum:
+    value: ${{ steps.archive.outputs.checksum }}
 
 runs:
   using: composite
@@ -33,12 +36,13 @@ runs:
       env:
         TARGET: ${{ inputs.path }}
         NAME: ${{ inputs.name }}
-        EPOCH: ${{ inputs.epoch }}
+        MTIME: ${{ inputs.mtime }}
       run: |
         test -d "$TARGET"
         [[ -z "$NAME" || "$NAME" =~ ^[a-zA-Z0-9._-]+$ ]]
 
-        TAR=$(mktemp /tmp/"${NAME:-source}".XXXXXX.tar)
+        TAR=$(mktemp /tmp/"${NAME:-archive}".XXXXXX.tar)
+        MTIME="${MTIME:-$(date +%s)}"
 
         tar -C "$TARGET" \
           --format=gnu \
@@ -46,22 +50,24 @@ runs:
           --owner=0 \
           --group=0 \
           --numeric-owner \
-          --mtime="@$EPOCH" \
+          --mtime="@$MTIME" \
           -cf "$TAR" .
 
         read -r TAR_SHA256 _ < <(sha256sum "$TAR")
 
         >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
-        tar-path=$TAR
-        tar-sha256=$TAR_SHA256
+        path=$TAR
+        name=${TAR##*/}
+        checksum=$TAR_SHA256
         EOF
 
     - name: Upload artifact
       if: ${{ inputs.upload == 'true' }}
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ inputs.name }}
-        path: ${{ steps.archive.outputs.tar-path }}
+        path: ${{ steps.archive.outputs.path }}
+        # single-file artifact - name = filename
+        archive: false
         include-hidden-files: true
         retention-days: 1
