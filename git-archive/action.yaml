@@ -69,7 +69,6 @@ runs:
 
         read -r ARCHIVE_SHA256 _ < <(sha256sum "$ARCHIVE")
 
-        >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         name=${ARCHIVE##*/}
         path=$ARCHIVE
@@ -105,7 +104,7 @@ runs:
 
         tar --extract --file "$ARCHIVE" --directory "$TARGET"
 
-        >&2 echo "-- OUTPUT"
+        
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         path=$TARGET
         EOF

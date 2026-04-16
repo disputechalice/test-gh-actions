@@ -42,7 +42,6 @@ runs:
         TARGET=$(mktemp -d --tmpdir "${ARCHIVE##*/}.XXXXXX")
         tar --extract --file "$ARCHIVE" --directory "$TARGET"
 
-        >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         path=$TARGET
         EOF

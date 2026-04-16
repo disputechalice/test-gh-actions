@@ -38,5 +38,4 @@ runs:
             '. + {($k): $v}' <<< "$json")
         done < "${{ inputs.env-file }}"
 
-        >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" <<< "json=$(jq -c . <<< "$json")"
