@@ -4,12 +4,12 @@ description: >
 
 inputs:
   path:
-    description: "Path to archive"
+    description: "Path to source directory"
     required: true
-  name-prefix:
+  base-name:
     description: "Prefix for filename (optional)"
     required: false
-    default: "source"
+    default: 'archive'
   mtime:
     description: "Timestamp as epoch seconds (optional)"
     required: false
@@ -34,24 +34,25 @@ runs:
       name: Create canonical tarball
       shell: bash
       env:
-        TARGET: ${{ inputs.path }}
-        NAME: ${{ inputs.name }}
+        SOURCE: ${{ inputs.path }}
+        BASENAME: ${{ inputs.base-name }}
         MTIME: ${{ inputs.mtime }}
       run: |
-        test -d "$TARGET"
-        [[ -z "$NAME" || "$NAME" =~ ^[a-zA-Z0-9._-]+$ ]]
+        : "${SOURCE:?} ${BASENAME:?}"
 
-        TAR=$(mktemp /tmp/"${NAME:-archive}".XXXXXX.tar)
+        [[ "$BASENAME" =~ ^[a-zA-Z0-9._-]+$ ]]
+
+        test -d "$SOURCE"
+
+        TAR=$(mktemp --tmpdir --suffix=.tar "${BASENAME}.XXXXXX")
         MTIME="${MTIME:-$(date +%s)}"
 
-        tar -C "$TARGET" \
-          --format=gnu \
-          --sort=name \
-          --owner=0 \
-          --group=0 \
-          --numeric-owner \
+        tar --create --file "$TAR" \
+          --format=posix --sort=name \
+          --numeric-owner --owner=0 --group=0 \
           --mtime="@$MTIME" \
-          -cf "$TAR" .
+          --directory "$SOURCE" \
+          .
 
         read -r TAR_SHA256 _ < <(sha256sum "$TAR")
 
