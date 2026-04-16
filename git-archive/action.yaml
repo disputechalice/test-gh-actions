@@ -10,6 +10,10 @@ inputs:
   git-ref:
     description: "Git reference"
     required: true
+  base-name:
+    description: "Prefix for filename (optional)"
+    required: false
+    default: 'git-archive'
   upload:
     description: "Upload archive as artifact (default)"
     required: false
@@ -20,14 +24,14 @@ inputs:
     default: false
 
 outputs:
+  name:
+    value: ${{ steps.archive.outputs.name }}
+  path:
+    value: ${{ steps.extract.outputs.path }}
   git-commit:
     value: ${{ steps.archive.outputs.git-commit }}
   git-commit-epoch:
     value: ${{ steps.archive.outputs.git-commit-epoch }}
-  artifact:
-    value: ${{ steps.archive.outputs.name }}
-  path:
-    value: ${{ steps.extract.outputs.path }}
 
 runs:
   using: composite
@@ -38,11 +42,13 @@ runs:
       env:
         GIT_REPO: ${{ inputs.git-repo }}
         GIT_REF: ${{ inputs.git-ref }}
+        BASENAME: ${{ inputs.base-name }}
       run: |
         # Create bare repo, fetch commit, create archive
 
-        trap 'echo >&2 E$? L$LINENO' ERR        
         : "${GIT_REPO:?} ${GIT_REF:?}"
+
+        [[ "$BASENAME" =~ ^[a-zA-Z0-9._-]+$ ]]
 
         GIT_DIR=$(mktemp -d "/tmp/repo.XXXXXX.git")
 
@@ -54,7 +60,7 @@ runs:
         COMMIT_OID=$(git rev-parse FETCH_HEAD)
         COMMIT_EPOCH=$(git show -s --format=%ct "$COMMIT_OID")
 
-        ARCHIVE="$(mktemp "/tmp/archive-${COMMIT_OID}.XXXXXX.tar")"
+        ARCHIVE=$(mktemp --tmpdir --suffix=.tar "${BASENAME}-${COMMIT_OID}.XXXXXX")
         git archive --format=tar "$COMMIT_OID" > "$ARCHIVE"
 
         >&2 echo "-- OUTPUT"
@@ -86,10 +92,10 @@ runs:
         # Untar to temp directory
 
         : "${COMMIT:?} ${ARCHIVE:?}"
-        
-        TARGET="$(mktemp -d "/tmp/commit-${COMMIT}.XXXXXX")"
 
-        tar -xf "$ARCHIVE" -C "$TARGET"
+        TARGET=$(mktemp -d --tmpdir "${ARCHIVE##*/}.XXXXXX")
+
+        tar --extract --file "$ARCHIVE" --directory "$TARGET"
 
         >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
