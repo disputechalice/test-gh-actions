@@ -28,6 +28,8 @@ outputs:
     value: ${{ steps.archive.outputs.name }}
   archive-path:
     value: ${{ steps.archive.outputs.path }}
+  archive-sha256:
+    value: ${{ steps.archive.outputs.sha256 }}
   extract-path:
     value: ${{ steps.extract.outputs.path }}
   git-commit:
@@ -65,10 +67,13 @@ runs:
         ARCHIVE="$(mktemp --tmpdir --suffix=.tar "${BASENAME}-${COMMIT}.XXXXXX")"
         git archive --format=tar "$COMMIT" > "$ARCHIVE"
 
+        read -r ARCHIVE_SHA256 _ < <(sha256sum "$ARCHIVE")
+
         >&2 echo "-- OUTPUT"
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
-        path=$ARCHIVE
         name=${ARCHIVE##*/}
+        path=$ARCHIVE
+        sha256=$ARCHIVE_SHA256
         git-commit=$COMMIT
         git-commit-ctime=$COMMIT_CT
         EOF
@@ -79,6 +84,7 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         path: ${{ steps.archive.outputs.path }}
+        # single-file artifact - name = filename        
         archive: false
         include-hidden-files: true
         retention-days: 1
