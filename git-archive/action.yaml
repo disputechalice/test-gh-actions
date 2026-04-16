@@ -19,7 +19,7 @@ inputs:
     required: false
     default: true
   extract:
-    description: "Extract locally"
+    description: "Extract locally (optional)"
     required: false
     default: false
 
@@ -96,7 +96,7 @@ runs:
         COMMIT: ${{ steps.archive.outputs.git-commit }}
         ARCHIVE: ${{ steps.archive.outputs.path }}
       run: |
-        # Untar to temp directory
+        # Extract to temp directory
 
         : "${COMMIT:?} ${ARCHIVE:?}"
 
