@@ -1,4 +1,4 @@
-name: Git archive artifact
+name: Git repository archive
 description: >
   Create archive from git repository, upload as artifact (default),
   extract locally (optional)
@@ -26,7 +26,9 @@ inputs:
 outputs:
   name:
     value: ${{ steps.archive.outputs.name }}
-  path:
+  archive-path:
+    value: ${{ steps.archive.outputs.path }}
+  extract-path:
     value: ${{ steps.extract.outputs.path }}
   git-commit:
     value: ${{ steps.archive.outputs.git-commit }}
@@ -82,7 +84,7 @@ runs:
         retention-days: 1
 
     - id: extract
-      name: Populate tree from archive
+      name: Extract archive
       if: ${{ inputs.extract == 'true' }}
       shell: bash
       env:
