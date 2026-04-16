@@ -64,7 +64,7 @@ runs:
         COMMIT="$(git rev-parse FETCH_HEAD)"
         COMMIT_CT="$(git show -s --format=%ct "$COMMIT")"
 
-        ARCHIVE="$(mktemp --tmpdir --suffix=.tar "${BASENAME}-${COMMIT}.XXXXXX")"
+        ARCHIVE="$(mktemp --tmpdir --suffix=.tar "${BASENAME}-${COMMIT:0:7}.XXXXXX")"
         git archive --format=tar "$COMMIT" > "$ARCHIVE"
 
         read -r ARCHIVE_SHA256 _ < <(sha256sum "$ARCHIVE")
