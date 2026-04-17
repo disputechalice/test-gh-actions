@@ -23,24 +23,24 @@ inputs:
     required: true
 
 outputs:
-  output-dir:
-    value: ${{ steps.run.outputs.output-dir }}
+  status:
+    value: ${{ steps.verify.outputs.status }}
+
+env:
+  IMAGE: ${{ inputs.image }}
+  SRC: ${{ inputs.source-dir }}
+  PKG: ${{ inputs.package }}
 
 runs:
   using: composite
   steps:
-    - id: run
+    - id: build
       shell: bash
       env:
-        IMAGE: ${{ inputs.image }}
-        SRC: ${{ inputs.source-dir }}
-        PKG: ${{ inputs.package }}
-        VER: ${{ inputs.version }}
-        SHA: ${{ inputs.sha256 }}
         SOURCE_DATE_EPOCH: ${{ inputs.source-date-epoch }}
         DPKG_DEB_COMPRESSOR_TYPE: ${{ inputs.compressor }}
       run: |
-        : "${IMAGE:?} ${SRC:?} ${PKG:?} ${VER:?} ${SHA:?}"
+        : "${IMAGE:?} ${SRC:?} ${PKG:?}"
 
         OUTDIR="$(mktemp -d --tmpdir podman-run-out.XXXXXX)"
 
@@ -50,28 +50,35 @@ runs:
           -v "$SRC":/src:ro \
           -v "$OUTDIR":/out \
           -v "${{ github.action_path }}/build.sh":/build.sh:ro \
-          -e PKG \
-          -e VER \
-          -e SHA \
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
           "$IMAGE" \
           bash /build.sh "/src/$PKG" "/out/built.deb"
+        
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
+        built-deb=$OUTDIR/built.deb
+        EOF
 
-          set -x
-          built_deb="$OUTDIR/built.deb"
-          test -f "$built_deb"
+    - id: verify
+      shell: bash
+      env:
+        VER: ${{ inputs.version }}
+        SHA: ${{ inputs.sha256 }}
+        BUILT_DEB: ${{ steps.build.built-deb }}
+      run: |
+        : ${VER:?} ${SHA:?}
 
-          echo "::group::contents"
-          dpkg-deb --contents "$built_deb"
-          echo "::endgroup::"
+        test -f "$BUILT_DEB"
 
-          built="$(dpkg-deb --show --showformat='${Package}|${Version}' "$built_deb")"
-          [[ "$built" == "$PKG|$VER" ]]
+        echo "::group::contents"
+        dpkg-deb --contents "$BUILT_DEB"
+        echo "::endgroup::"
 
-          sha256sum --check <<< "$SHA  $built_deb"
+        built="$(dpkg-deb --show --showformat='${Package}|${Version}' "$BUILT_DEB")"
+        [[ "$built" == "$PKG|$VER" ]]
 
-        # Return output directory
-        {
-          echo "output-dir=$OUTDIR"
-        } >> "$GITHUB_OUTPUT"
+        sha256sum --check <<< "$SHA  $BUILT_DEB"
+
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
+        status=pass
+        EOF
