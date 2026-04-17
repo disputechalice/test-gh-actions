@@ -42,10 +42,8 @@ runs:
       run: |
         : "${IMAGE:?} ${SRC:?} ${PKG:?} ${VER:?} ${SHA:?}"
 
-        # Create isolated output directory on host
-        OUTDIR="$(mktemp -d --tmpdir gha-podman-out.XXXXXX)"
+        OUTDIR="$(mktemp -d --tmpdir podman-run-out.XXXXXX)"
 
-        # Run hermetic build inside container
         podman run --rm \
           --userns=keep-id \
           --user "$(id -u):$(id -g)" \
@@ -58,7 +56,7 @@ runs:
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
           "$IMAGE" \
-          bash -e -c '
+          bash -ex -c '
             built_deb=$(mktemp /tmp/repro.XXXXXX.deb)
 
             dpkg-deb --build --root-owner-group "/src/$PKG" "$built_deb"
