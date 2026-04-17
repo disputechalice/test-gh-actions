@@ -26,17 +26,15 @@ outputs:
   status:
     value: ${{ steps.verify.outputs.status }}
 
-env:
-  IMAGE: ${{ inputs.image }}
-  SRC: ${{ inputs.source-dir }}
-  PKG: ${{ inputs.package }}
-
 runs:
   using: composite
   steps:
     - id: build
       shell: bash
       env:
+        IMAGE: ${{ inputs.image }}
+        SRC: ${{ inputs.source-dir }}
+        PKG: ${{ inputs.package }}
         SOURCE_DATE_EPOCH: ${{ inputs.source-date-epoch }}
         DPKG_DEB_COMPRESSOR_TYPE: ${{ inputs.compressor }}
       run: |
@@ -62,6 +60,9 @@ runs:
     - id: verify
       shell: bash
       env:
+        IMAGE: ${{ inputs.image }}
+        SRC: ${{ inputs.source-dir }}
+        PKG: ${{ inputs.package }}
         VER: ${{ inputs.version }}
         SHA: ${{ inputs.sha256 }}
         BUILT_DEB: ${{ steps.build.built-deb }}
