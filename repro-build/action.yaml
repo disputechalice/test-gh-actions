@@ -47,6 +47,8 @@ runs:
 
         # Run hermetic build inside container
         podman run --rm \
+          --userns=keep-id \
+          --user "$(id -u):$(id -g)" \
           --network=none \
           -v "$SRC":/src:ro \
           -v "$OUTDIR":/out \
