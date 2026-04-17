@@ -1,25 +1,23 @@
-name: Hermetic build via Podman
-description: Run build inside container and return output directory
+name: Verify build - plain
+description: >
+  Run build inside container, verify integrity & expected checksum
 
 inputs:
   image:
     description: Container image to run
     required: true
-
   source-dir:
     description: Source directory on host
     required: true
-
+  source-date-epoch:
+    required: true
+  compressor:
+    required: true
   package:
     required: true
   version:
     required: true
   sha256:
-    required: true
-
-  source-date-epoch:
-    required: true
-  compressor:
     required: true
 
 outputs:
@@ -33,25 +31,24 @@ runs:
       shell: bash
       env:
         IMAGE: ${{ inputs.image }}
-        SRC: ${{ inputs.source-dir }}
-        PKG: ${{ inputs.package }}
+        SRCDIR: ${{ inputs.source-dir }}/${{ inputs.package }}
         SOURCE_DATE_EPOCH: ${{ inputs.source-date-epoch }}
         DPKG_DEB_COMPRESSOR_TYPE: ${{ inputs.compressor }}
       run: |
-        : "${IMAGE:?} ${SRC:?} ${PKG:?}"
+        : "${IMAGE:?} ${SRCDIR:?}"
 
         OUTDIR="$(mktemp -d --tmpdir podman-run-out.XXXXXX)"
 
         podman run --rm \
           --userns=keep-id \
           --network=none \
-          -v "$SRC":/src:ro \
-          -v "$OUTDIR":/out \
-          -v "${{ github.action_path }}/build.sh":/build.sh:ro \
+          -v "$SRCDIR":/mnt/src:ro \
+          -v "$OUTDIR":/mnt/out \
+          -v "${{ github.action_path }}/build.sh":/mnt/build.sh:ro \
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
           "$IMAGE" \
-          bash /build.sh "/src/$PKG" "/out/built.deb"
+          /mnt/build.sh "/mnt/src/" "/mnt/out/built.deb"
         
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         built-deb=$OUTDIR/built.deb
@@ -60,12 +57,12 @@ runs:
     - id: verify
       shell: bash
       env:
-        PKG: ${{ inputs.package }}
-        VER: ${{ inputs.version }}
-        SHA: ${{ inputs.sha256 }}
+        PACKAGE: ${{ inputs.package }}
+        VERSION: ${{ inputs.version }}
+        SHA256: ${{ inputs.sha256 }}
         BUILT_DEB: ${{ steps.build.outputs.built-deb }}
       run: |
-        : "${PKG:?} ${VER:?} ${SHA:?} ${BUILT_DEB}"
+        : "${PACKAGE:?} ${VERSION:?} ${SHA256:?} ${BUILT_DEB}"
 
         test -f "$BUILT_DEB"
 
@@ -74,9 +71,9 @@ runs:
         echo "::endgroup::"
 
         built="$(dpkg-deb --show --showformat='${Package}|${Version}' "$BUILT_DEB")"
-        [[ "$built" == "$PKG|$VER" ]]
+        [[ "$built" == "$PACKAGE|$VERSION" ]]
 
-        sha256sum --check <<< "$SHA  $BUILT_DEB"
+        sha256sum --check <<< "$SHA256  $BUILT_DEB"
 
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         status=pass
