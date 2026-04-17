@@ -58,7 +58,7 @@ runs:
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
           "$IMAGE" \
-          bash -euxo pipefail -c '
+          bash -e -c '
             built_deb=$(mktemp /tmp/repro.XXXXXX.deb)
 
             dpkg-deb --build --root-owner-group "/src/$PKG" "$built_deb"
