@@ -1,0 +1,79 @@
+name: Hermetic build via Podman
+description: Run build inside container and return output directory
+
+inputs:
+  image:
+    description: Container image to run
+    required: true
+
+  source-dir:
+    description: Source directory on host
+    required: true
+
+  package:
+    required: true
+  version:
+    required: true
+  sha256:
+    required: true
+
+  source-date-epoch:
+    required: true
+  compressor:
+    required: true
+
+outputs:
+  output-dir:
+    value: ${{ steps.run.outputs.output-dir }}
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        SRC: ${{ inputs.source-dir }}
+        PKG: ${{ inputs.package }}
+        VER: ${{ inputs.version }}
+        SHA: ${{ inputs.sha256 }}
+        SOURCE_DATE_EPOCH: ${{ inputs.source-date-epoch }}
+        DPKG_DEB_COMPRESSOR_TYPE: ${{ inputs.compressor }}
+      run: |
+        : "${IMAGE:?} ${SRC:?} ${PKG:?} ${VER:?} ${SHA:?}"
+
+        # Create isolated output directory on host
+        OUTDIR="$(mktemp -d --tmpdir gha-podman-out.XXXXXX)"
+
+        # Run hermetic build inside container
+        podman run --rm \
+          --network=none \
+          -v "$SRC":/src:ro \
+          -v "$OUTDIR":/out \
+          -e PKG \
+          -e VER \
+          -e SHA \
+          -e SOURCE_DATE_EPOCH \
+          -e DPKG_DEB_COMPRESSOR_TYPE \
+          "$IMAGE" \
+          bash -euxo pipefail -c '
+            built_deb=$(mktemp /tmp/repro.XXXXXX.deb)
+
+            dpkg-deb --build --root-owner-group "/src/$PKG" "$built_deb"
+
+            echo "::group::contents"
+            dpkg-deb --contents "$built_deb"
+            echo "::endgroup::"
+
+            built="$(dpkg-deb --show --showformat=${Package}\|${Version} "$built_deb")"
+            [ "$built" = "$PKG|$VER" ]
+
+            sha256sum --check <<< "$SHA  $built_deb"
+
+            cp "$built_deb" /out/
+          '
+
+        # Return output directory
+        {
+          echo "output-dir=$OUTDIR"
+        } >> "$GITHUB_OUTPUT"
