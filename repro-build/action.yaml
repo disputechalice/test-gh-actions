@@ -46,32 +46,30 @@ runs:
 
         podman run --rm \
           --userns=keep-id \
-          --user "$(id -u):$(id -g)" \
           --network=none \
           -v "$SRC":/src:ro \
           -v "$OUTDIR":/out \
+          -v "${{ github.action_path }}/build.sh":/build.sh:ro \
           -e PKG \
           -e VER \
           -e SHA \
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
           "$IMAGE" \
-          bash -ex -c '
-            built_deb=$(mktemp /tmp/repro.XXXXXX.deb)
+          bash /build.sh "/src/$PKG" "/out/built.deb"
 
-            dpkg-deb --build --root-owner-group "/src/$PKG" "$built_deb"
+          set -x
+          built_deb="$OUTDIR/built.deb"
+          test -f "$built_deb"
 
-            echo "::group::contents"
-            dpkg-deb --contents "$built_deb"
-            echo "::endgroup::"
+          echo "::group::contents"
+          dpkg-deb --contents "$built_deb"
+          echo "::endgroup::"
 
-            built="$(dpkg-deb --show --showformat=${Package}\|${Version} "$built_deb")"
-            [ "$built" = "$PKG|$VER" ]
+          built="$(dpkg-deb --show --showformat='${Package}|${Version}' "$built_deb")"
+          [[ "$built" == "$PKG|$VER" ]]
 
-            sha256sum --check <<< "$SHA  $built_deb"
-
-            cp "$built_deb" /out/
-          '
+          sha256sum --check <<< "$SHA  $built_deb"
 
         # Return output directory
         {
