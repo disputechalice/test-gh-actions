@@ -52,7 +52,7 @@ runs:
       name: Resolve into context
       shell: bash
       env:
-        GHA_UTIL: ${{ github.action_path }}/../_util
+        ENV_TO_JSON: ${{ github.action_path }}/env-to-json
         DEB_PACKAGE: ${{ steps.acquire.outputs.package }}
         DEB_VERSION: ${{ steps.acquire.outputs.version }}
         BUILDMETA_PATH: ${{ steps.acquire.outputs.path }}
@@ -63,7 +63,7 @@ runs:
 
         : "${DEB_PACKAGE:?} ${DEB_VERSION:?} ${BUILDMETA_PATH:?}"
 
-        BUILDMETA="$("$GHA_UTIL/env-to-json" "$BUILDMETA_PATH")"
+        BUILDMETA="$("$ENV_TO_JSON" "$BUILDMETA_PATH")"
 
         json=$(jq -c \
           --arg deb_package "$DEB_PACKAGE" \
