@@ -27,16 +27,16 @@ runs:
       shell: bash
       env:
         BUILDER: ${{ inputs.builder-image }}
-        BUILD: "${{ github.action_path }}/${{ inputs.build-script }}"
+        BUILD: ${{ github.action_path }}/${{ inputs.build-script }}
         SRCDIR: ${{ inputs.source-dir }}
-        DEB_PACKAGE: ${{ fromJson(inputs.context).deb.package }}
+        PACKAGE: ${{ fromJson(inputs.context).deb.package }}
         SOURCE_DATE_EPOCH: ${{ fromJson(inputs.context).env.source_date_epoch }}
         DPKG_DEB_COMPRESSOR_TYPE: ${{ fromJson(inputs.context).env.dpkg_deb_compressor_type }}
       run: |
-        : "${BUILDER:?} ${BUILD:?} ${SRCDIR:?} ${DEB_PACKAGE:?}"
+        : "${BUILDER:?} ${BUILD:?} ${SRCDIR:?} ${PACKAGE:?}"
         : "${SOURCE_DATE_EPOCH:?} ${DPKG_DEB_COMPRESSOR_TYPE:?}"
 
-        DEBDIR="$SRCDIR/$DEB_PACKAGE"
+        DEBDIR="$SRCDIR/$PACKAGE"
         OUTDIR="$(mktemp -d --tmpdir podman-run-out.XXXXXX)"
 
         podman run --rm \
