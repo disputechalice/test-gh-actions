@@ -18,8 +18,8 @@ outputs:
 runs:
   using: composite
   steps:
-    - id: buildmeta-acq
-      name: Acquire buildmeta file
+    - id: acquire
+      name: Acquire .buildmeta file
       shell: bash
       env:
         TARGET: ${{ inputs.source-dir }}
@@ -48,19 +48,19 @@ runs:
         version=${buildmeta_barename#*_}
         EOF
 
-    - id: buildmeta-env
-      name: Ingest buildmeta env file
+    - id: buildmeta
+      name: Ingest buildmeta file
       uses: disputechalice/actions/env-to-json@main
       with:
-        env-file: ${{ steps.buildmeta-acq.outputs.path }}
+        env-file: ${{ steps.acquire.outputs.path }}
 
     - id: context
-      name: Resolve build context
+      name: Resolve into context
       shell: bash
       env:
-        DEB_PACKAGE: ${{ steps.buildmeta-acq.outputs.package }}
-        DEB_VERSION: ${{ steps.buildmeta-acq.outputs.version }}
-        BUILDMETA: ${{ steps.buildmeta-env.outputs.json }}
+        DEB_PACKAGE: ${{ steps.acquire.outputs.package }}
+        DEB_VERSION: ${{ steps.acquire.outputs.version }}
+        BUILDMETA: ${{ steps.buildmeta.outputs.json }}
       run: |
         # Structure build environment and package metadata as JSON
 
