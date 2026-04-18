@@ -9,11 +9,11 @@ inputs:
 
 runs:
   using: composite
-  env:
-    OVERRIDE_APT_CONF: ${{ github.action_path }}/override.apt.conf
   steps:
     - name: Install apt packages
       shell: bash
+      env:
+        OVERRIDE_APT_CONF: ${{ github.action_path }}/override.apt.conf
       run: |
         export APT_CONFIG="$(realpath "$OVERRIDE_APT_CONF")"
         export DEBIAN_FRONTEND=noninteractive
