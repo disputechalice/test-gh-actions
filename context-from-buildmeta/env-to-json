@@ -3,8 +3,8 @@ import sys
 import json
 import re
 
-if len(sys.argv) < 2:
-  sys.exit("env file required as argument")
+if len(sys.argv) != 2:
+  sys.exit("single arg required")
 
 env_file = sys.argv[1]
 
