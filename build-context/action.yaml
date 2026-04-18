@@ -50,7 +50,7 @@ runs:
 
     - id: buildmeta-env
       name: Ingest buildmeta env file
-      uses: ./env-to-json
+      uses: disputechalice/actions/env-to-json@main
       with:
         env-file: ${{ steps.buildmeta-acq.outputs.path }}
 
