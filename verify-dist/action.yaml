@@ -1,0 +1,50 @@
+name: Verify distribution integrity
+description: >
+  Fetch distributed package and verify checksum and metadata
+
+inputs:
+  context:
+    description: Context JSON
+    required: true
+
+outputs:
+  status:
+    value: ${{ steps.verify.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - id: fetch
+      shell: bash
+      env:
+        DEB_URL: ${{ fromJson(inputs.context).deb.url }}
+      run: |
+        : "${DEB_URL:?}"
+
+        dist_deb="$(mktemp --tmpdir dist.XXXXXX.deb)"
+
+        wget --no-verbose -O "$dist_deb" "$DEB_URL"
+
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
+        dist-deb=$dist_deb
+        EOF
+
+
+    - id: verify
+      shell: bash
+      env:
+        DIST_DEB: ${{ steps.fetch.outputs.dist-deb }}
+        DEB_PACKAGE: ${{ fromJson(inputs.context).deb.package }}
+        DEB_VERSION: ${{ fromJson(inputs.context).deb.version }}
+        DEB_SHA256: ${{ fromJson(inputs.context).deb.sha256 }}
+      run: |
+        : "${DIST_DEB:?} ${DEB_PACKAGE:?} ${DEB_VERSION:?} ${DEB_SHA256:?}"
+
+        dist="$(dpkg-deb --show --showformat='${Package}|${Version}' "$DIST_DEB")"
+        [[ "$dist" == "$DEB_PACKAGE|$DEB_VERSION" ]]
+
+        sha256sum --check <<< "$DEB_SHA256  $DIST_DEB"
+
+        >&2 tee -a "$GITHUB_OUTPUT" << EOF
+        status=pass
+        EOF
