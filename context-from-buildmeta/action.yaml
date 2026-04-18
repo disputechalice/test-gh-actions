@@ -15,9 +15,6 @@ outputs:
   json:
     value: ${{ steps.context.outputs.json }}
 
-env:
-  GHA_PATH: ${{ github.action_path }}
-
 runs:
   using: composite
   steps:
@@ -55,6 +52,7 @@ runs:
       name: Resolve into context
       shell: bash
       env:
+        GHA_PATH: ${{ github.action_path }}/../_shared
         DEB_PACKAGE: ${{ steps.acquire.outputs.package }}
         DEB_VERSION: ${{ steps.acquire.outputs.version }}
         BUILDMETA_PATH: ${{ steps.acquire.outputs.path }}
