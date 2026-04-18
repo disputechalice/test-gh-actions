@@ -48,24 +48,22 @@ runs:
         version=${buildmeta_barename#*_}
         EOF
 
-    - id: buildmeta
-      name: Ingest buildmeta file
-      uses: disputechalice/actions/env-to-json@main
-      with:
-        env-file: ${{ steps.acquire.outputs.path }}
-
     - id: context
       name: Resolve into context
       shell: bash
       env:
+        GHA_PATH: ${{ github.action_path }}
         DEB_PACKAGE: ${{ steps.acquire.outputs.package }}
         DEB_VERSION: ${{ steps.acquire.outputs.version }}
-        BUILDMETA: ${{ steps.buildmeta.outputs.json }}
+        BUILDMETA_PATH: ${{ steps.acquire.outputs.path }}
       run: |
         # Structure build environment and package metadata as JSON
 
         trap 'echo >&2 E$? L$LINENO' ERR
-        : "${DEB_PACKAGE:?} ${DEB_VERSION:?} ${BUILDMETA:?}"
+
+        : "${DEB_PACKAGE:?} ${DEB_VERSION:?} ${BUILDMETA_PATH:?}"
+
+        BUILDMETA="$("$GHA_PATH/env-to-json" "$BUILDMETA_PATH")"
 
         json=$(jq -c \
           --arg deb_package "$DEB_PACKAGE" \
