@@ -9,16 +9,9 @@ inputs:
   source-dir:
     description: Source directory on host
     required: true
-  source-date-epoch:
+  context:
     required: true
-  compressor:
-    required: true
-  package:
-    required: true
-  version:
-    required: true
-  sha256:
-    required: true
+    description: "Context JSON"
 
 outputs:
   status:
@@ -31,24 +24,27 @@ runs:
       shell: bash
       env:
         IMAGE: ${{ inputs.image }}
-        SRCDIR: ${{ inputs.source-dir }}/${{ inputs.package }}
-        SOURCE_DATE_EPOCH: ${{ inputs.source-date-epoch }}
-        DPKG_DEB_COMPRESSOR_TYPE: ${{ inputs.compressor }}
+        SRCDIR: ${{ inputs.source-dir }}
+        DEB_PACKAGE: ${{ fromJson(inputs.context).deb.package }}
+        SOURCE_DATE_EPOCH: ${{ fromJson(inputs.context).env.source_date_epoch }}
+        DPKG_DEB_COMPRESSOR_TYPE: ${{ fromJson(inputs.context).env.dpkg_deb_compressor_type }}
       run: |
-        : "${IMAGE:?} ${SRCDIR:?}"
+        : "${IMAGE:?} ${SRCDIR:?} ${DEB_PACKAGE:?}"
+        : "${SOURCE_DATE_EPOCH:?} ${DPKG_DEB_COMPRESSOR_TYPE:?}"
 
+        DEBDIR="$SRCDIR/$DEB_PACKAGE"
         OUTDIR="$(mktemp -d --tmpdir podman-run-out.XXXXXX)"
 
         podman run --rm \
           --userns=keep-id \
           --network=none \
-          -v "$SRCDIR":/mnt/src:ro \
+          -v "$DEBDIR":/mnt/src/deb:ro \
           -v "$OUTDIR":/mnt/out \
           -v "${{ github.action_path }}/build.sh":/mnt/build.sh:ro \
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
           "$IMAGE" \
-          /mnt/build.sh "/mnt/src/" "/mnt/out/built.deb"
+          /mnt/build.sh "/mnt/src/deb" "/mnt/out/built.deb"
         
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         built-deb=$OUTDIR/built.deb
@@ -57,18 +53,18 @@ runs:
     - id: verify
       shell: bash
       env:
-        PACKAGE: ${{ inputs.package }}
-        VERSION: ${{ inputs.version }}
-        SHA256: ${{ inputs.sha256 }}
         BUILT_DEB: ${{ steps.build.outputs.built-deb }}
+        PACKAGE: ${{ fromJson(inputs.context).deb.package }}
+        VERSION: ${{ fromJson(inputs.context).deb.version }}
+        SHA256: ${{ fromJson(inputs.context).deb.sha256 }}
       run: |
-        : "${PACKAGE:?} ${VERSION:?} ${SHA256:?} ${BUILT_DEB}"
-
         test -f "$BUILT_DEB"
 
         echo "::group::contents"
         dpkg-deb --contents "$BUILT_DEB"
         echo "::endgroup::"
+
+        : "${PACKAGE:?} ${VERSION:?} ${SHA256:?}"
 
         built="$(dpkg-deb --show --showformat='${Package}|${Version}' "$BUILT_DEB")"
         [[ "$built" == "$PACKAGE|$VERSION" ]]
