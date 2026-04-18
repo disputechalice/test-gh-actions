@@ -9,11 +9,13 @@ inputs:
 
 runs:
   using: composite
+  env:
+    OVERRIDE_APT_CONF: ${{ github.action_path }}/override.apt.conf
   steps:
     - name: Install apt packages
       shell: bash
       run: |
-        export APT_CONFIG="$(realpath "${{ github.action_path }}/apt.conf")"
+        export APT_CONFIG="$(realpath "$OVERRIDE_APT_CONF")"
         export DEBIAN_FRONTEND=noninteractive
 
         sudo -E apt-get update
