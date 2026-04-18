@@ -3,8 +3,11 @@ description: >
   Run build inside container, verify integrity & expected checksum
 
 inputs:
-  image:
-    description: Container image to run
+  builder-image:
+    description: Container image to run the build in
+    required: true
+  build-script:
+    description: Script to run the package build
     required: true
   source-dir:
     description: Source directory on host
@@ -23,13 +26,14 @@ runs:
     - id: build
       shell: bash
       env:
-        IMAGE: ${{ inputs.image }}
+        BUILDER: ${{ inputs.builder-image }}
+        BUILD: "${{ github.action_path }}/${{ inputs.build-script }}"
         SRCDIR: ${{ inputs.source-dir }}
         DEB_PACKAGE: ${{ fromJson(inputs.context).deb.package }}
         SOURCE_DATE_EPOCH: ${{ fromJson(inputs.context).env.source_date_epoch }}
         DPKG_DEB_COMPRESSOR_TYPE: ${{ fromJson(inputs.context).env.dpkg_deb_compressor_type }}
       run: |
-        : "${IMAGE:?} ${SRCDIR:?} ${DEB_PACKAGE:?}"
+        : "${BUILDER:?} ${BUILD:?} ${SRCDIR:?} ${DEB_PACKAGE:?}"
         : "${SOURCE_DATE_EPOCH:?} ${DPKG_DEB_COMPRESSOR_TYPE:?}"
 
         DEBDIR="$SRCDIR/$DEB_PACKAGE"
@@ -40,11 +44,11 @@ runs:
           --network=none \
           -v "$DEBDIR":/mnt/src/deb:ro \
           -v "$OUTDIR":/mnt/out \
-          -v "${{ github.action_path }}/build.sh":/mnt/build.sh:ro \
+          -v "$BUILD":/mnt/build:ro \
           -e SOURCE_DATE_EPOCH \
           -e DPKG_DEB_COMPRESSOR_TYPE \
-          "$IMAGE" \
-          /mnt/build.sh "/mnt/src/deb" "/mnt/out/built.deb"
+          "$BUILDER" \
+          /mnt/build "/mnt/src/deb" "/mnt/out/built.deb"
         
         >&2 tee -a "$GITHUB_OUTPUT" << EOF
         built-deb=$OUTDIR/built.deb
